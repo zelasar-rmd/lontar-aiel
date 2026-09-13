@@ -1,0 +1,15 @@
+# OS Metadata
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Elixir / Erlang
+_build/
+deps/
+*.ez
+erl_crash.dump
+*.beam
+
+# Local data / scratch
+data/
+*.log
