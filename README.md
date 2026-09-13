@@ -32,12 +32,11 @@ Whenever an AI agent completes a response under Lontar AIEL guidelines, it appen
 ```markdown
 ──────────────────────────────────────────────────────────────────────
 🌱 Session & Environmental Footprint
-• Model & Tokens : ~1,450 tokens (Gemini 3.8 Flash)
-• Energy & Power : ~0.29 Wh (~0.00029 kWh)
-• Carbon Impact  : ~0.12 g CO₂e
-• Water Cooling  : ~0.73 mL
-• Green Offset   : ~2.8 minutes of mature tropical tree absorption
-• Conservation   : LindungiHutan (Indonesian Coastal Mangrove Restoration)
+• Tokens & Compute : Turn: ~1,250 | Session: ~16,500 tokens (Gemini 3.8 Flash)
+• Energy & Power   : Turn: ~0.25 Wh | Session: ~3.30 Wh (~0.0033 kWh)
+• Carbon Footprint : Turn: ~0.10 g | Session: ~1.32 g CO₂e
+• Water & Offset   : ~8.25 mL cooling | ~31.5 min tree absorption
+• Conservation     : LindungiHutan (Indonesian Coastal Mangrove Restoration)
 ──────────────────────────────────────────────────────────────────────
 ```
 
@@ -49,8 +48,11 @@ Whenever an AI agent completes a response under Lontar AIEL guidelines, it appen
 Audit any local Antigravity transcript:
 
 ```bash
-# Automatically audit the most recent active session
+# Dual report: Latest Turn Delta + Cumulative Session Total
 elixir scripts/calculate_emission.exs
+
+# Only the latest turn delta
+elixir scripts/calculate_emission.exs --latest
 
 # Or specify an exact transcript path
 elixir scripts/calculate_emission.exs /path/to/transcript.jsonl

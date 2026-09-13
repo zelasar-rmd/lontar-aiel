@@ -1,40 +1,41 @@
 ---
 name: session-emission-reporting
-version: 1.1.0
-last_updated: 2026-09-12
+version: 1.2.0
+last_updated: 2026-09-13
 status: active
 scope: universal
-engine_version: "1.0.0"
+engine_version: "1.2.0"
 ---
 
-# Session Emission & Environmental Footprint Reporting (v1.1.0)
+# Session Emission & Environmental Footprint Reporting (v1.2.0)
 
-> **Version:** `1.1.0`  
-> **Effective Date:** 2026-09-12  
+> **Version:** `1.2.0`  
+> **Effective Date:** 2026-09-13  
 > **Status:** Active (Production)  
-> **Underlying Engine:** `session-emission-tracker` (`calculate_emission.exs` v1.0.0)
+> **Underlying Engine:** `session-emission-tracker` (`calculate_emission.exs` v1.2.0)
 
 ---
 
-## 1. Mandatory Response Emission Summary (Unconditional)
-At the conclusion of **EVERY response, question answer, implementation, code review, or conversation turn**, the agent MUST append a standardized environmental impact block in the response footer. This block is unconditional and must never be omitted regardless of task size.
+## 1. Mandatory Response Emission Summary (Turn + Session Split)
+At the conclusion of **EVERY response, question answer, implementation, code review, or conversation turn**, the agent MUST append a standardized environmental impact block in the response footer. 
+
+To eliminate ambiguity between single-reply compute and cumulative context growth, the block reports both **Turn Delta** (the current prompt/reply exchange) and **Session Cumulative** totals.
 
 ### Standard Footer Format:
 ```markdown
 ──────────────────────────────────────────────────────────────────────
 🌱 Session & Environmental Footprint
-• Model & Tokens : ~<tokens> tokens (<model_name>)
-• Energy & Power : ~<Wh> Wh (~<kWh> kWh)
-• Carbon Impact  : ~<grams_co2> g CO₂e
-• Water Cooling  : ~<mL> mL
-• Green Offset   : ~<minutes_or_hours> of mature tropical tree absorption
-• Conservation   : <Recommended initiative: Mangrove, Peatland, or Coral Reef>
+• Tokens & Compute : Turn: ~<turn_tokens> | Session: ~<session_tokens> tokens (<model_name>)
+• Energy & Power   : Turn: ~<turn_wh> Wh | Session: ~<session_wh> Wh (~<session_kwh> kWh)
+• Carbon Footprint : Turn: ~<turn_co2> g | Session: ~<session_co2> g CO₂e
+• Water & Offset   : ~<session_water_ml> mL cooling | ~<session_tree_mins> min tree absorption
+• Conservation     : <Recommended initiative: Mangrove, Peatland, or Coral Reef>
 ──────────────────────────────────────────────────────────────────────
 ```
 
 ---
 
-## 2. Standardized Calculation Coefficients (v1.0.0 Baseline)
+## 2. Standardized Calculation Coefficients (v1.2.0 Baseline)
 To ensure instant, reliable reporting without slowing down responses, use the following scientific baseline metrics:
 
 1. **Inference Energy Consumption:**
@@ -63,9 +64,11 @@ When recommending conservation avenues in the footer or full audit:
 When the user asks for a complete historical session audit, exact calculations, or cross-session trends:
 - Route to the **`session-emission-tracker`** skill.
 - Execute `skills/session-emission-tracker/scripts/calculate_emission.exs` against the session `transcript.jsonl`.
+- Support `--latest` flag for turn-only audits and default for cumulative audits.
 
 ---
 
 ## 5. Version Changelog
-- **v1.1.0 (2026-09-12):** Made emission footer mandatory on EVERY response (unconditional trigger) so all turns report footprint.
-- **v1.0.0 (2026-09-12):** Initial formal specification establishing post-task emission reporting.
+- **v1.2.0 (2026-09-13):** Split reporting into dual metrics: Turn Delta (incremental cost) vs. Session Total (cumulative context impact).
+- **v1.1.0 (2026-09-12):** Made emission footer mandatory on EVERY response (unconditional trigger).
+- **v1.0.0 (2026-09-12):** Initial formal specification.

@@ -53,3 +53,17 @@ To translate micro-emissions into relatable, actionable metrics:
 
 3. **Coral Reef Buffer:**
    * Coral micro-colonies provide critical wave energy buffering and calcification, impacted by thermal and acidification stress proportional to carbon emissions.
+
+---
+
+## 5. Dual-Scope Accounting: Turn Delta vs. Cumulative Session
+
+To prevent ambiguity between isolated prompt costs and progressive context growth:
+
+1. **Turn Delta (Incremental Interaction):**
+   * Computes the resource footprint strictly from the most recent `USER_INPUT` to the completion of the assistant's reply (including intermediate tool calls).
+   * Reflects the marginal cost of the single interaction.
+
+2. **Session Total (Cumulative Thread History):**
+   * Computes the cumulative footprint across all turns in the session.
+   * Accounts for KV-cache retention and progressive context window inflation.

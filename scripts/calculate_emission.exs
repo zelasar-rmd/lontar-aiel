@@ -4,45 +4,64 @@ defmodule EmissionCalculator do
   @moduledoc """
   High-performance Elixir script to parse Antigravity session transcripts
   and calculate exact energy consumption, carbon emissions, water footprints,
-  and green offset metrics.
+  and green offset metrics for both individual turns and cumulative sessions.
 
-  Version: 1.0.0
-  Release Date: 2026-09-12
+  Version: 1.2.0
+  Release Date: 2026-09-13
   Engine: BEAM Stream Architecture
   """
 
-  @version "1.0.0"
-  @release_date "2026-09-12"
+  @version "1.2.0"
+  @release_date "2026-09-13"
 
-  # Energy & Emission Constants (v1.0.0 Baseline)
+  # Energy & Emission Constants (v1.2.0 Baseline)
   @wh_per_k_token_flash 0.20
   @wh_per_k_token_pro 1.50
   @g_co2_per_wh 0.40
   @ml_water_per_k_token 0.50
-  @g_co2_per_tree_day 60.27
   @g_co2_per_tree_minute 0.04185
 
   def version, do: @version
   def release_date, do: @release_date
 
   def run(argv) do
-    case argv do
-      [flag | _] when flag in ["--version", "-v"] ->
+    {mode, target_path} = parse_args(argv)
+
+    case mode do
+      :version ->
         IO.puts("calculate_emission.exs v#{@version} (#{@release_date}) [Elixir #{System.version()}]")
 
-      [flag | _] when flag in ["--help", "-h"] ->
+      :help ->
         print_help()
 
       _ ->
-        transcript_path = find_transcript_path(argv)
+        transcript_path = find_transcript_path(target_path)
 
         case File.exists?(transcript_path) do
           true ->
-            process_transcript(transcript_path)
+            process_transcript(transcript_path, mode)
           false ->
             IO.puts(:stderr, "Error: Transcript not found at #{transcript_path}")
             System.halt(1)
         end
+    end
+  end
+
+  defp parse_args(argv) do
+    cond do
+      Enum.any?(argv, &(&1 in ["--version", "-v"])) ->
+        {:version, nil}
+
+      Enum.any?(argv, &(&1 in ["--help", "-h"])) ->
+        {:help, nil}
+
+      Enum.any?(argv, &(&1 in ["--latest", "-l"])) ->
+        path = Enum.find(argv, &(!String.starts_with?(&1, "-")))
+        {:latest_only, path}
+
+      true ->
+        path = List.first(argv)
+        {:full, path}
     end
   end
 
@@ -55,6 +74,7 @@ defmodule EmissionCalculator do
       elixir calculate_emission.exs [OPTIONS] [TRANSCRIPT_PATH]
 
     Options:
+      -l, --latest     Report only the latest turn delta (prompt + reply)
       -v, --version    Show engine version and exit
       -h, --help       Show this help message and exit
 
@@ -65,7 +85,7 @@ defmodule EmissionCalculator do
     """)
   end
 
-  defp find_transcript_path([path | _]) when is_binary(path) and path != "", do: path
+  defp find_transcript_path(path) when is_binary(path) and path != "", do: path
 
   defp find_transcript_path(_) do
     base_dir = Path.expand("~/.gemini/antigravity-cli/brain")
@@ -84,26 +104,48 @@ defmodule EmissionCalculator do
     end
   end
 
-  defp process_transcript(path) do
-    stats =
+  defp process_transcript(path, mode) do
+    lines =
       path
       |> File.stream!()
       |> Stream.map(&String.trim/1)
       |> Stream.reject(&(&1 == ""))
-      |> Enum.reduce(%{user_chars: 0, model_chars: 0, tool_chars: 0, steps: 0, tool_calls: 0}, &accumulate_step/2)
+      |> Enum.to_list()
 
-    total_chars = stats.user_chars + stats.model_chars + stats.tool_chars
-    est_tokens = round(total_chars / 3.8) # Average ~3.8 chars per subword token
+    # Calculate overall session stats
+    session_stats = Enum.reduce(lines, init_stats(), &accumulate_step/2)
 
-    # Computations for Flash model baseline
-    energy_wh_flash = (est_tokens / 1000.0) * @wh_per_k_token_flash
-    carbon_g_flash = energy_wh_flash * @g_co2_per_wh
-    water_ml = (est_tokens / 1000.0) * @ml_water_per_k_token
+    # Calculate latest turn stats (from last USER_INPUT to EOF)
+    last_user_idx =
+      lines
+      |> Enum.with_index()
+      |> Enum.filter(fn {line, _idx} -> String.contains?(line, "\"type\":\"USER_INPUT\"") end)
+      |> List.last()
+      |> case do
+        {_, idx} -> idx
+        nil -> 0
+      end
 
-    # Equivalent tree sequestration
-    tree_minutes = carbon_g_flash / @g_co2_per_tree_minute
+    turn_lines = Enum.slice(lines, last_user_idx..-1//1)
+    turn_stats = Enum.reduce(turn_lines, init_stats(), &accumulate_step/2)
 
-    print_report(path, stats, est_tokens, energy_wh_flash, carbon_g_flash, water_ml, tree_minutes)
+    session_tokens = round((session_stats.user_chars + session_stats.model_chars + session_stats.tool_chars) / 3.8)
+    turn_tokens = round((turn_stats.user_chars + turn_stats.model_chars + turn_stats.tool_chars) / 3.8)
+
+    session_wh = (session_tokens / 1000.0) * @wh_per_k_token_flash
+    turn_wh = (turn_tokens / 1000.0) * @wh_per_k_token_flash
+
+    session_co2 = session_wh * @g_co2_per_wh
+    turn_co2 = turn_wh * @g_co2_per_wh
+
+    session_water_ml = (session_tokens / 1000.0) * @ml_water_per_k_token
+    session_tree_mins = session_co2 / @g_co2_per_tree_minute
+
+    print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, session_water_ml, session_tree_mins)
+  end
+
+  defp init_stats do
+    %{user_chars: 0, model_chars: 0, tool_chars: 0, steps: 0, tool_calls: 0}
   end
 
   defp accumulate_step(line, acc) do
@@ -124,36 +166,47 @@ defmodule EmissionCalculator do
     end
   end
 
-  defp print_report(path, stats, tokens, wh, co2_g, water_ml, tree_mins) do
-    divider = String.duplicate("─", 72)
+  defp print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, water_ml, tree_mins) do
+    divider = String.duplicate("─", 74)
 
-    IO.puts("""
+    header = """
     #{divider}
       🌱 ANTIGRAVITY SESSION ENVIRONMENTAL AUDIT (POWERED BY ELIXIR v#{@version})
     #{divider}
       📁 Engine Version    : v#{@version} (#{@release_date})
       📁 Transcript Target : #{Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))}/#{Path.basename(path)}
-      🔢 Recorded Steps    : #{stats.steps} turns (#{stats.tool_calls} tool executions)
-      📝 Analyzed Volume   : #{tokens |> Integer.to_string() |> format_number()} estimated tokens
+    """
 
-    ────────────────────── RESOURCE CONSUMPTION ────────────────────────────
-      ⚡ Energy Consumed   : #{:erlang.float_to_binary(wh, decimals: 3)} Wh (#{:erlang.float_to_binary(wh / 1000.0, decimals: 6)} kWh)
-      💨 Carbon Footprint  : #{:erlang.float_to_binary(co2_g, decimals: 3)} g CO₂e
-      💧 Cooling Water     : #{:erlang.float_to_binary(water_ml, decimals: 2)} mL
+    turn_block = """
+    ──────────────────── ⚡ CURRENT TURN DELTA (LAST INTERACTION) ─────────────────
+      📝 Turn Volume       : #{turn_tokens |> Integer.to_string() |> format_number()} tokens (#{turn_stats.steps} step(s))
+      ⚡ Turn Energy       : #{:erlang.float_to_binary(turn_wh, decimals: 3)} Wh
+      💨 Turn Carbon       : #{:erlang.float_to_binary(turn_co2, decimals: 3)} g CO₂e
+    """
 
-    ────────────────────── REAL-WORLD EQUIVALENTS ──────────────────────────
-      📱 Smartphone Charge : ~#{:erlang.float_to_binary(wh / 15.0, decimals: 2)} full charges
-      🚗 EV Driving        : ~#{:erlang.float_to_binary((wh / 180.0) * 1000.0, decimals: 1)} meters driven
-      🌳 Tree Sequestration: Balanced by ~#{:erlang.float_to_binary(tree_mins, decimals: 1)} minutes of tropical tree growth
+    session_block = """
+    ──────────────────── 🌐 CUMULATIVE SESSION TOTAL (ALL TURNS) ─────────────────
+      🔢 Total Recorded    : #{session_stats.steps} steps (#{session_stats.tool_calls} tool executions)
+      📝 Total Volume      : #{session_tokens |> Integer.to_string() |> format_number()} estimated tokens
+      ⚡ Total Energy      : #{:erlang.float_to_binary(session_wh, decimals: 3)} Wh (#{:erlang.float_to_binary(session_wh / 1000.0, decimals: 6)} kWh)
+      💨 Total Carbon      : #{:erlang.float_to_binary(session_co2, decimals: 3)} g CO₂e
+      💧 Total Water       : #{:erlang.float_to_binary(water_ml, decimals: 2)} mL cooling
 
-    ────────────────────── ACTIONABLE GREEN OFFSET ─────────────────────────
-      🌿 Mangrove / Peatland : ~#{:erlang.float_to_binary(co2_g / 33.7, decimals: 2)} hours of 1 Indonesian mangrove seedling absorption
-      🪸 Coral Reef Buffering: Helps protect ~#{:erlang.float_to_binary(co2_g * 0.05, decimals: 3)} cm² of marine micro-colony
-      🔗 Verified Projects   : • LindungiHutan (https://lindungihutan.com)
-                               • Coral Guardian (https://coralguardian.org)
-                               • Katingan Mentaya Peatland (Borneo)
+    ──────────────────── 🌿 REAL-WORLD EQUIVALENTS & OFFSET ──────────────────────
+      📱 Smartphone Charge : ~#{:erlang.float_to_binary(session_wh / 15.0, decimals: 2)} full charges
+      🚗 EV Driving        : ~#{:erlang.float_to_binary((session_wh / 180.0) * 1000.0, decimals: 1)} meters driven
+      🌳 Tree Absorption   : Balanced by ~#{:erlang.float_to_binary(tree_mins, decimals: 1)} minutes of tropical tree growth
+      🪸 Conservation Ref  : LindungiHutan (Indonesia) / Coral Guardian
     #{divider}
-    """)
+    """
+
+    case mode do
+      :latest_only ->
+        IO.puts(header <> turn_block <> divider <> "\n")
+
+      _ ->
+        IO.puts(header <> turn_block <> session_block)
+    end
   end
 
   defp format_number(str) do
