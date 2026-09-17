@@ -174,22 +174,14 @@ defmodule EmissionCalculator do
   defp print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, water_ml, tree_mins) do
     if mode == :json do
       session_id = Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+      now = DateTime.utc_now() |> DateTime.to_iso8601()
+      energy_str = :erlang.float_to_binary(session_wh, decimals: 3)
+      co2_str = :erlang.float_to_binary(session_co2, decimals: 3)
+      water_str = :erlang.float_to_binary(water_ml, decimals: 3)
+      tree_str = :erlang.float_to_binary(tree_mins, decimals: 3)
       
-      json = """
-      {
-        "timestamp": "#{DateTime.utc_now() |> DateTime.to_iso8601()}",
-        "session_id": "#{session_id}",
-        "model": "Gemini Flash / Baseline",
-        "turn_count": #{session_stats.steps},
-        "total_tokens": #{session_tokens},
-        "energy_wh": #{:erlang.float_to_binary(session_wh, decimals: 3)},
-        "co2_grams": #{:erlang.float_to_binary(session_co2, decimals: 3)},
-        "water_ml": #{:erlang.float_to_binary(water_ml, decimals: 3)},
-        "tree_mins": #{:erlang.float_to_binary(tree_mins, decimals: 3)},
-        "version": "#{@version}"
-      }
-      """
-      IO.puts(String.trim(json))
+      json = "{\"timestamp\":\"#{now}\",\"session_id\":\"#{session_id}\",\"model\":\"Gemini Flash / Baseline\",\"turn_count\":#{session_stats.steps},\"total_tokens\":#{session_tokens},\"energy_wh\":#{energy_str},\"co2_grams\":#{co2_str},\"water_ml\":#{water_str},\"tree_mins\":#{tree_str},\"version\":\"#{@version}\"}"
+      IO.puts(json)
     else
       divider = String.duplicate("─", 74)
 
