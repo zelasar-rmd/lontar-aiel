@@ -72,12 +72,16 @@ elixir scripts/calculate_emission.exs --help
 lontar-aiel/
 ├── README.md                            # Project overview & philosophy
 ├── docs/
+│   ├── PRD.md                           # Product Requirement Document (v0.1.0-alpha)
+│   ├── PROJECT_SCOPE.md                 # Scope boundaries, deliverables & NFRs
+│   ├── IMPLEMENTATION_PLAN.md           # Step-by-step telemetry pipeline plan
 │   ├── ROADMAP.md                       # Comprehensive 4-phase evolution roadmap
 │   └── SPECIFICATION.md                 # Scientific formulas, constants & offset math
 ├── rules/
-│   └── session-emission-reporting.md   # Universal AI rule (v1.1.0)
+│   └── session-emission-reporting.md   # Universal AI rule (v1.2.0)
 └── scripts/
-    └── calculate_emission.exs           # Elixir stream transcript audit engine (v1.0.0)
+    ├── calculate_emission.exs           # Elixir stream transcript audit engine (v1.2.0)
+    └── sync_telemetry.sh                # Automated Termux/Linux telemetry Git exporter
 ```
 
 ---

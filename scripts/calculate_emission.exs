@@ -16,7 +16,7 @@ defmodule EmissionCalculator do
 
   # Energy & Emission Constants (v1.2.0 Baseline)
   @wh_per_k_token_flash 0.20
-  @wh_per_k_token_pro 1.50
+  # @wh_per_k_token_pro 1.50 # Reserved for dynamic model tier detection
   @g_co2_per_wh 0.40
   @ml_water_per_k_token 0.50
   @g_co2_per_tree_minute 0.04185
@@ -78,6 +78,7 @@ defmodule EmissionCalculator do
       elixir calculate_emission.exs [OPTIONS] [TRANSCRIPT_PATH]
 
     Options:
+      --json           Output machine-readable JSON telemetry receipt
       -l, --latest     Report only the latest turn delta (prompt + reply)
       -v, --version    Show engine version and exit
       -h, --help       Show this help message and exit
