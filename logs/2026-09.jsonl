@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-09-17T19:10:00.206438Z",
+  "session_id": "1823b289-bdd4-4f11-aaea-6801c38c7b99",
+  "model": "Gemini Flash / Baseline",
+  "turn_count": 124,
+  "total_tokens": 50334,
+  "energy_wh": 10.067,
+  "co2_grams": 4.027,
+  "water_ml": 25.167,
+  "tree_mins": 96.218,
+  "version": "1.2.0"
+}
