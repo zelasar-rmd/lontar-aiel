@@ -55,6 +55,10 @@ defmodule EmissionCalculator do
       Enum.any?(argv, &(&1 in ["--help", "-h"])) ->
         {:help, nil}
 
+      Enum.any?(argv, &(&1 == "--json")) ->
+        path = Enum.find(argv, &(!String.starts_with?(&1, "-")))
+        {:json, path}
+
       Enum.any?(argv, &(&1 in ["--latest", "-l"])) ->
         path = Enum.find(argv, &(!String.starts_with?(&1, "-")))
         {:latest_only, path}
@@ -158,7 +162,7 @@ defmodule EmissionCalculator do
 
       String.contains?(line, "\"source\":\"MODEL\"") ->
         is_tool = String.contains?(line, "\"tool_calls\"")
-        tool_inc = if is_tool, do: 1, do: 0
+        tool_inc = if is_tool do 1 else 0 end
         %{acc | model_chars: acc.model_chars + chars, tool_calls: acc.tool_calls + tool_inc}
 
       true ->
@@ -167,45 +171,64 @@ defmodule EmissionCalculator do
   end
 
   defp print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, water_ml, tree_mins) do
-    divider = String.duplicate("─", 74)
+    if mode == :json do
+      session_id = Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+      
+      json = """
+      {
+        "timestamp": "#{DateTime.utc_now() |> DateTime.to_iso8601()}",
+        "session_id": "#{session_id}",
+        "model": "Gemini Flash / Baseline",
+        "turn_count": #{session_stats.steps},
+        "total_tokens": #{session_tokens},
+        "energy_wh": #{:erlang.float_to_binary(session_wh, decimals: 3)},
+        "co2_grams": #{:erlang.float_to_binary(session_co2, decimals: 3)},
+        "water_ml": #{:erlang.float_to_binary(water_ml, decimals: 3)},
+        "tree_mins": #{:erlang.float_to_binary(tree_mins, decimals: 3)},
+        "version": "#{@version}"
+      }
+      """
+      IO.puts(String.trim(json))
+    else
+      divider = String.duplicate("─", 74)
 
-    header = """
-    #{divider}
-      🌱 ANTIGRAVITY SESSION ENVIRONMENTAL AUDIT (POWERED BY ELIXIR v#{@version})
-    #{divider}
-      📁 Engine Version    : v#{@version} (#{@release_date})
-      📁 Transcript Target : #{Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))}/#{Path.basename(path)}
-    """
+      header = """
+      #{divider}
+        🌱 ANTIGRAVITY SESSION ENVIRONMENTAL AUDIT (POWERED BY ELIXIR v#{@version})
+      #{divider}
+        📁 Engine Version    : v#{@version} (#{@release_date})
+        📁 Transcript Target : #{Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))}/#{Path.basename(path)}
+      """
 
-    turn_block = """
-    ──────────────────── ⚡ CURRENT TURN DELTA (LAST INTERACTION) ─────────────────
-      📝 Turn Volume       : #{turn_tokens |> Integer.to_string() |> format_number()} tokens (#{turn_stats.steps} step(s))
-      ⚡ Turn Energy       : #{:erlang.float_to_binary(turn_wh, decimals: 3)} Wh
-      💨 Turn Carbon       : #{:erlang.float_to_binary(turn_co2, decimals: 3)} g CO₂e
-    """
+      turn_block = """
+      ──────────────────── ⚡ CURRENT TURN DELTA (LAST INTERACTION) ─────────────────
+        📝 Turn Volume       : #{turn_tokens |> Integer.to_string() |> format_number()} tokens (#{turn_stats.steps} step(s))
+        ⚡ Turn Energy       : #{:erlang.float_to_binary(turn_wh, decimals: 3)} Wh
+        💨 Turn Carbon       : #{:erlang.float_to_binary(turn_co2, decimals: 3)} g CO₂e
+      """
 
-    session_block = """
-    ──────────────────── 🌐 CUMULATIVE SESSION TOTAL (ALL TURNS) ─────────────────
-      🔢 Total Recorded    : #{session_stats.steps} steps (#{session_stats.tool_calls} tool executions)
-      📝 Total Volume      : #{session_tokens |> Integer.to_string() |> format_number()} estimated tokens
-      ⚡ Total Energy      : #{:erlang.float_to_binary(session_wh, decimals: 3)} Wh (#{:erlang.float_to_binary(session_wh / 1000.0, decimals: 6)} kWh)
-      💨 Total Carbon      : #{:erlang.float_to_binary(session_co2, decimals: 3)} g CO₂e
-      💧 Total Water       : #{:erlang.float_to_binary(water_ml, decimals: 2)} mL cooling
+      session_block = """
+      ──────────────────── 🌐 CUMULATIVE SESSION TOTAL (ALL TURNS) ─────────────────
+        🔢 Total Recorded    : #{session_stats.steps} steps (#{session_stats.tool_calls} tool executions)
+        📝 Total Volume      : #{session_tokens |> Integer.to_string() |> format_number()} estimated tokens
+        ⚡ Total Energy      : #{:erlang.float_to_binary(session_wh, decimals: 3)} Wh (#{:erlang.float_to_binary(session_wh / 1000.0, decimals: 6)} kWh)
+        💨 Total Carbon      : #{:erlang.float_to_binary(session_co2, decimals: 3)} g CO₂e
+        💧 Total Water       : #{:erlang.float_to_binary(water_ml, decimals: 2)} mL cooling
 
-    ──────────────────── 🌿 REAL-WORLD EQUIVALENTS & OFFSET ──────────────────────
-      📱 Smartphone Charge : ~#{:erlang.float_to_binary(session_wh / 15.0, decimals: 2)} full charges
-      🚗 EV Driving        : ~#{:erlang.float_to_binary((session_wh / 180.0) * 1000.0, decimals: 1)} meters driven
-      🌳 Tree Absorption   : Balanced by ~#{:erlang.float_to_binary(tree_mins, decimals: 1)} minutes of tropical tree growth
-      🪸 Conservation Ref  : LindungiHutan (Indonesia) / Coral Guardian
-    #{divider}
-    """
+      ──────────────────── 🌿 REAL-WORLD EQUIVALENTS & OFFSET ──────────────────────
+        📱 Smartphone Charge : ~#{:erlang.float_to_binary(session_wh / 15.0, decimals: 2)} full charges
+        🚗 EV Driving        : ~#{:erlang.float_to_binary((session_wh / 180.0) * 1000.0, decimals: 1)} meters driven
+        🌳 Tree Absorption   : Balanced by ~#{:erlang.float_to_binary(tree_mins, decimals: 1)} minutes of tropical tree growth
+        🪸 Conservation Ref  : LindungiHutan (Indonesia) / Coral Guardian
+      #{divider}
+      """
 
-    case mode do
-      :latest_only ->
-        IO.puts(header <> turn_block <> divider <> "\n")
-
-      _ ->
-        IO.puts(header <> turn_block <> session_block)
+      case mode do
+        :latest_only ->
+          IO.puts(header <> turn_block <> divider <> "\n")
+        _ ->
+          IO.puts(header <> turn_block <> session_block)
+      end
     end
   end
 
