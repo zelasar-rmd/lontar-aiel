@@ -1,6 +1,5 @@
 {
   "timestamp": "2026-09-17T19:10:00.206438Z",
-  "session_id": "1823b289-bdd4-4f11-aaea-6801c38c7b99",
   "model": "Gemini Flash / Baseline",
   "turn_count": 124,
   "total_tokens": 50334,
@@ -10,3 +9,4 @@
   "tree_mins": 96.218,
   "version": "1.2.0"
 }
+{"timestamp":"2026-09-19T16:22:46.929296Z","session_id":"1823b289-bdd4-4f11-aaea-6801c38c7b99","model":"Gemini Flash / Baseline","turn_count":469,"total_tokens":129075,"energy_wh":25.815,"co2_grams":10.326,"water_ml":64.537,"tree_mins":246.738,"version":"1.2.0"}
