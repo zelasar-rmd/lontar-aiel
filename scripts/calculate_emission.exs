@@ -202,7 +202,7 @@ defmodule EmissionCalculator do
   defp find_transcript_path(_) do
     base_dir = Path.expand("~/.gemini/antigravity-cli/brain")
 
-    case Path.wildcard("#{base_dir}/*/.system_generated/logs/transcript.jsonl") do
+    case Path.wildcard("#{base_dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true) do
       [] ->
         IO.puts(:stderr, "No active transcripts found in #{base_dir}")
         System.halt(1)
