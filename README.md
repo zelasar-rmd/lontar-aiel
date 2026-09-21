@@ -81,6 +81,121 @@ elixir scripts/calculate_emission.exs --help
 
 ---
 
+## 📦 Cross-Platform Installation
+
+### 🪟 Windows Setup
+1. Install Erlang and Elixir:
+   ```powershell
+   winget install Erlang.Erlang
+   winget install Elixir.Elixir
+   ```
+2. Clone repository:
+   ```powershell
+   git clone https://github.com/zelasar-rmd/lontar-aiel.git "$env:USERPROFILE\lontar-aiel"
+   ```
+3. Create the global `lontar` CLI wrapper in PowerShell:
+   ```powershell
+   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\bin"
+   @'
+   @echo off
+   setlocal
+   set "PATH=C:\Program Files\Erlang OTP\bin;%USERPROFILE%\scoop\apps\elixir\current\bin;%PATH%"
+   set "ELIXIR_SCRIPT=%USERPROFILE%\lontar-aiel\scripts\calculate_emission.exs"
+   set "SYNC_SCRIPT=%USERPROFILE%\lontar-aiel\scripts\sync_telemetry.sh"
+   if exist "C:\Program Files\Git\bin\bash.exe" (set "BASH_EXE=C:\Program Files\Git\bin\bash.exe") else (set "BASH_EXE=bash")
+   if "%~1"=="" goto help
+   if "%~1"=="help" goto help
+   if "%~1"=="version" (elixir "%ELIXIR_SCRIPT%" --version & goto end)
+   if "%~1"=="ledger" (elixir "%ELIXIR_SCRIPT%" ledger & goto end)
+   if "%~1"=="audit" (shift & elixir "%ELIXIR_SCRIPT%" %1 %2 %3 %4 %5 & goto end)
+   if "%~1"=="sync" (shift & "%BASH_EXE%" "%SYNC_SCRIPT%" %1 %2 %3 %4 %5 & goto end)
+   elixir "%ELIXIR_SCRIPT%" %*
+   goto end
+   :help
+   echo Lontar AIEL Universal CLI v1.3.0
+   echo Commands: lontar ledger, lontar audit, lontar sync, lontar version
+   :end
+   endlocal
+   '@ | Set-Content -Path "$env:USERPROFILE\bin\lontar.bat"
+
+   $p = [System.Environment]::GetEnvironmentVariable("Path", "User")
+   if ($p -notlike "*$env:USERPROFILE\bin*") {
+       [System.Environment]::SetEnvironmentVariable("Path", "$env:USERPROFILE\bin;$p", "User")
+   }
+   ```
+
+### 📱 Termux (Android) Setup
+```bash
+pkg update && pkg install -y elixir git ncurses-utils
+git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
+mkdir -p ~/bin
+cat << 'EOF' > ~/bin/lontar
+#!/usr/bin/env bash
+LONTAR_DIR="${HOME}/lontar-aiel"
+COMMAND="$1"
+shift || true
+case "$COMMAND" in
+  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
+  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
+  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
+  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
+  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (Termux)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
+  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
+esac
+EOF
+chmod +x ~/bin/lontar
+grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc || echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 🐧 Linux (Ubuntu / Debian / Arch / Fedora) Setup
+```bash
+# Ubuntu/Debian: sudo apt install -y elixir erlang git
+# Arch Linux:    sudo pacman -S elixir git
+# Fedora:        sudo dnf install -y elixir git
+git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/.local/share/lontar-aiel
+mkdir -p ~/.local/bin
+cat << 'EOF' > ~/.local/bin/lontar
+#!/usr/bin/env bash
+LONTAR_DIR="${HOME}/.local/share/lontar-aiel"
+COMMAND="$1"
+shift || true
+case "$COMMAND" in
+  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
+  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
+  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
+  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
+  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (Linux)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
+  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
+esac
+EOF
+chmod +x ~/.local/bin/lontar
+```
+
+### 🍎 macOS Setup
+```bash
+brew install elixir git
+git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
+mkdir -p /usr/local/bin 2>/dev/null || mkdir -p ~/.local/bin
+cat << 'EOF' > ~/.local/bin/lontar
+#!/usr/bin/env bash
+LONTAR_DIR="${HOME}/lontar-aiel"
+COMMAND="$1"
+shift || true
+case "$COMMAND" in
+  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
+  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
+  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
+  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
+  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (macOS)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
+  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
+esac
+EOF
+chmod +x ~/.local/bin/lontar
+```
+
+---
+
 ## 📁 Repository Structure
 
 ```text
