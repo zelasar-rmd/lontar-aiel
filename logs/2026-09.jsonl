@@ -10,3 +10,9 @@
   "version": "1.2.0"
 }
 {"timestamp":"2026-09-19T16:22:46.929296Z","session_id":"1823b289-bdd4-4f11-aaea-6801c38c7b99","model":"Gemini Flash / Baseline","turn_count":469,"total_tokens":129075,"energy_wh":25.815,"co2_grams":10.326,"water_ml":64.537,"tree_mins":246.738,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:11:53.641000Z","session_id":"00d517cb-9a4b-42ba-a5d4-5dcfd27c3cc5","model":"Gemini Flash / Baseline","turn_count":35,"total_tokens":8443,"energy_wh":1.689,"co2_grams":0.675,"water_ml":4.221,"tree_mins":16.140,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:11:54.994000Z","session_id":"2abba62b-3c25-47f4-8ce4-7e714c3d4279","model":"Gemini Flash / Baseline","turn_count":137,"total_tokens":29096,"energy_wh":5.819,"co2_grams":2.328,"water_ml":14.548,"tree_mins":55.620,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:11:56.319000Z","session_id":"615e16c0-0f78-4e39-a423-c1ef2f15ab5e","model":"Gemini Flash / Baseline","turn_count":43,"total_tokens":11020,"energy_wh":2.204,"co2_grams":0.882,"water_ml":5.510,"tree_mins":21.066,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:11:57.744000Z","session_id":"c5c799d0-11a6-404d-9cd4-b62febcb1d9f","model":"Gemini Flash / Baseline","turn_count":3,"total_tokens":1613,"energy_wh":0.323,"co2_grams":0.129,"water_ml":0.807,"tree_mins":3.083,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:11:58.953000Z","session_id":"d03dabfe-e197-4cad-9817-5f9fe0f00dd8","model":"Gemini Flash / Baseline","turn_count":171,"total_tokens":45798,"energy_wh":9.160,"co2_grams":3.664,"water_ml":22.899,"tree_mins":87.547,"version":"1.2.0"}
+{"timestamp":"2026-09-21T13:12:00.217000Z","session_id":"dfa9f5fb-19df-4f6f-bab5-b469e2716691","model":"Gemini Flash / Baseline","turn_count":119,"total_tokens":29104,"energy_wh":5.821,"co2_grams":2.328,"water_ml":14.552,"tree_mins":55.635,"version":"1.2.0"}
