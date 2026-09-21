@@ -18,9 +18,11 @@ In Nusantara (Indonesian) heritage, **Lontar** refers to the ancient palm-leaf m
    Enforces a clean, standardized environmental impact summary on every AI conversation turn across IDEs, desktop applications, and terminal CLIs.
 2. **Ultra-Fast Elixir Stream Engine:**
    Powered by the BEAM runtime (`calculate_emission.exs`), the engine stream-parses full session transcripts (`transcript.jsonl`) in sub-milliseconds with negligible memory footprint.
-3. **Scientific Grounding:**
+3. **Multi-Node Machine Attribution (v1.3.0):**
+   Automatically distinguishes emissions across edge devices (**Termux / Android**, **Windows**, **macOS**, and **Linux**), displaying a consolidated multi-machine breakdown table.
+4. **Scientific Grounding:**
    Translates raw token counts into real-world resource footprints (Watt-hours, grams of $CO_2e$, milliliters of evaporative cooling water).
-4. **Actionable Ecological Offsets:**
+5. **Actionable Ecological Offsets:**
    Connects digital carbon footprints directly to tangible conservation initiatives (tropical tree sequestration, Indonesian mangrove restoration, coral reef buffering).
 
 ---
@@ -42,10 +44,25 @@ Whenever an AI agent completes a response under Lontar AIEL guidelines, it appen
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Quickstart & Universal CLI
 
-### 1. Run the Elixir Calculation Engine
-Audit any local Antigravity transcript:
+### Universal `lontar` Command (Cross-Platform)
+
+```bash
+# 1. View aggregated multi-device ledger
+lontar ledger
+
+# 2. Audit current active conversation session
+lontar audit
+
+# 3. View only the latest turn delta
+lontar audit --latest
+
+# 4. Sync session receipts to Git telemetry branch
+lontar sync
+```
+
+### Direct Elixir Engine Execution
 
 ```bash
 # Dual report: Latest Turn Delta + Cumulative Session Total
@@ -54,12 +71,10 @@ elixir scripts/calculate_emission.exs
 # Only the latest turn delta
 elixir scripts/calculate_emission.exs --latest
 
-# Or specify an exact transcript path
-elixir scripts/calculate_emission.exs /path/to/transcript.jsonl
-```
+# View aggregated ledger from Git telemetry branch
+elixir scripts/calculate_emission.exs ledger
 
-### 2. Check Engine Version & Options
-```bash
+# Check engine version & options
 elixir scripts/calculate_emission.exs --version
 elixir scripts/calculate_emission.exs --help
 ```
