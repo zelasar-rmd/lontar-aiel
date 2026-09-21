@@ -6,13 +6,13 @@ defmodule EmissionCalculator do
   and calculate exact energy consumption, carbon emissions, water footprints,
   and green offset metrics for both individual turns and cumulative sessions.
 
-  Version: 1.2.0
-  Release Date: 2026-09-13
+  Version: 1.3.0
+  Release Date: 2026-09-21
   Engine: BEAM Stream Architecture
   """
 
-  @version "1.2.0"
-  @release_date "2026-09-13"
+  @version "1.3.0"
+  @release_date "2026-09-21"
 
   # Energy & Emission Constants (v1.2.0 Baseline)
   @wh_per_k_token_flash 0.20
@@ -34,6 +34,9 @@ defmodule EmissionCalculator do
       :help ->
         print_help()
 
+      :ledger ->
+        display_ledger()
+
       _ ->
         transcript_path = find_transcript_path(target_path)
 
@@ -44,6 +47,107 @@ defmodule EmissionCalculator do
             IO.puts(:stderr, "Error: Transcript not found at #{transcript_path}")
             System.halt(1)
         end
+    end
+  end
+
+  defp display_ledger do
+    user_profile = System.get_env("USERPROFILE") || System.get_env("HOME")
+    repo_dir = Path.join([user_profile, ".gemini", "antigravity-cli", "brain", "dfa9f5fb-19df-4f6f-bab5-b469e2716691", "scratch", "telemetry-clone"])
+
+    # Attempt to pull latest telemetry branch quietly if git is available
+    if File.dir?(repo_dir) do
+      System.cmd("git", ["pull", "origin", "telemetry", "--quiet"], cd: repo_dir)
+    end
+
+    logs_dir = Path.join(repo_dir, "logs") |> String.replace("\\", "/")
+
+    if File.dir?(logs_dir) do
+      json_files = Path.wildcard("#{logs_dir}/*.jsonl")
+
+      receipts =
+        json_files
+        |> Enum.flat_map(fn file ->
+          file
+          |> File.stream!()
+          |> Enum.map(&String.trim/1)
+          |> Enum.reject(&(&1 == ""))
+          |> Enum.map(fn line ->
+            parse_json_fallback(line)
+          end)
+          |> Enum.reject(fn map -> map["session_id"] == nil and map["timestamp"] == nil end)
+        end)
+        |> Enum.uniq_by(fn map -> map["session_id"] || map["timestamp"] end)
+
+      total_sessions = Enum.count(receipts)
+      total_tokens = Enum.reduce(receipts, 0, fn r, acc -> acc + (r["total_tokens"] || 0) end)
+      total_energy = Enum.reduce(receipts, 0.0, fn r, acc -> acc + (r["energy_wh"] || 0.0) end)
+      total_co2 = Enum.reduce(receipts, 0.0, fn r, acc -> acc + (r["co2_grams"] || 0.0) end)
+      total_water = Enum.reduce(receipts, 0.0, fn r, acc -> acc + (r["water_ml"] || 0.0) end)
+      total_tree = Enum.reduce(receipts, 0.0, fn r, acc -> acc + (r["tree_mins"] || 0.0) end)
+
+      divider = String.duplicate("─", 74)
+
+      # Group by device
+      devices_grouped =
+        receipts
+        |> Enum.group_by(fn r -> r["device"] || "unknown" end)
+        |> Enum.map(fn {device, group} ->
+          d_tokens = Enum.reduce(group, 0, fn r, a -> a + (r["total_tokens"] || 0) end)
+          d_energy = Enum.reduce(group, 0.0, fn r, a -> a + (r["energy_wh"] || 0.0) end)
+          d_co2 = Enum.reduce(group, 0.0, fn r, a -> a + (r["co2_grams"] || 0.0) end)
+          d_water = Enum.reduce(group, 0.0, fn r, a -> a + (r["water_ml"] || 0.0) end)
+          {device, Enum.count(group), d_tokens, d_energy, d_co2, d_water}
+        end)
+
+      IO.puts("""
+      #{divider}
+        📜 LONTAR AIEL TELEMETRY LEDGER (GIT BRANCH: telemetry)
+      #{divider}
+        🌐 Total Audited Sessions : #{total_sessions} session(s)
+        📝 Cumulative Tokens     : #{total_tokens |> Integer.to_string() |> format_number()} tokens
+        ⚡ Total Energy Footprint : #{:erlang.float_to_binary(total_energy, decimals: 3)} Wh (#{:erlang.float_to_binary(total_energy / 1000.0, decimals: 6)} kWh)
+        💨 Total Carbon Footprint : #{:erlang.float_to_binary(total_co2, decimals: 3)} g CO₂e
+        💧 Total Cooling Water   : #{:erlang.float_to_binary(total_water, decimals: 2)} mL
+        🌳 Total Tree Equivalent : ~#{:erlang.float_to_binary(total_tree, decimals: 1)} minutes of tropical tree absorption
+      #{divider}
+        💻 MACHINE & DEVICE FOOTPRINT BREAKDOWN:
+      """)
+
+      Enum.each(devices_grouped, fn {dev, count, tok, wh, co2, _water} ->
+        icon = case dev do
+          "termux" -> "📱"
+          "windows" -> "🪟"
+          "macos" -> "🍎"
+          "linux" -> "🐧"
+          _ -> "💻"
+        end
+        dev_pad = String.pad_trailing(String.upcase(dev), 10)
+        tok_str = tok |> Integer.to_string() |> format_number() |> String.pad_leading(10)
+        wh_str = (:erlang.float_to_binary(wh, decimals: 2) <> " Wh") |> String.pad_leading(10)
+        co2_str = (:erlang.float_to_binary(co2, decimals: 2) <> " g CO₂e") |> String.pad_leading(12)
+        IO.puts("  #{icon} #{dev_pad} : #{count} session(s) | #{tok_str} tok | #{wh_str} | #{co2_str}")
+      end)
+
+      IO.puts("""
+      #{divider}
+        RECENT TELEMETRY RECEIPTS:
+      """)
+
+      receipts
+      |> Enum.take(-5)
+      |> Enum.each(fn r ->
+        sid = String.slice(r["session_id"] || "N/A", 0, 8)
+        ts = String.slice(r["timestamp"] || "N/A", 0, 19)
+        dev = r["device"] || "unknown"
+        tokens = r["total_tokens"] || 0
+        wh = r["energy_wh"] || 0.0
+        co2 = r["co2_grams"] || 0.0
+        IO.puts("  • [#{ts}] [#{dev}] Session: #{sid}... | #{tokens} tokens | #{:erlang.float_to_binary(wh, decimals: 2)} Wh | #{:erlang.float_to_binary(co2, decimals: 2)} g CO₂e")
+      end)
+
+      IO.puts(divider <> "\n")
+    else
+      IO.puts(:stderr, "Error: No telemetry logs repository found. Run 'lontar sync' first.")
     end
   end
 
@@ -62,6 +166,9 @@ defmodule EmissionCalculator do
       Enum.any?(argv, &(&1 in ["--latest", "-l"])) ->
         path = Enum.find(argv, &(!String.starts_with?(&1, "-")))
         {:latest_only, path}
+
+      Enum.any?(argv, &(&1 in ["--ledger", "ledger"])) ->
+        {:ledger, nil}
 
       true ->
         path = List.first(argv)
@@ -171,6 +278,44 @@ defmodule EmissionCalculator do
     end
   end
 
+  def detect_device do
+    prefix = System.get_env("PREFIX") || ""
+    termux_ver = System.get_env("TERMUX_VERSION")
+
+    cond do
+      System.get_env("LONTAR_DEVICE") != nil ->
+        System.get_env("LONTAR_DEVICE") |> String.downcase()
+
+      String.contains?(prefix, "com.termux") or termux_ver != nil ->
+        "termux"
+
+      match?({:win32, _}, :os.type()) or System.get_env("OS") == "Windows_NT" ->
+        "windows"
+
+      match?({:unix, :darwin}, :os.type()) ->
+        "macos"
+
+      true ->
+        "linux"
+    end
+  end
+
+  def platform_desc do
+    prefix = System.get_env("PREFIX") || ""
+
+    case :os.type() do
+      {:win32, _} -> "Windows (#{System.get_env("OS") || "win32"})"
+      {:unix, :darwin} -> "macOS (Darwin)"
+      {:unix, _} ->
+        if String.contains?(prefix, "com.termux") do
+          "Android / Termux"
+        else
+          "Linux (#{elem(:os.version(), 0)} #{elem(:os.version(), 1)})"
+        end
+      _ -> "Unknown Platform"
+    end
+  end
+
   defp print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, water_ml, tree_mins) do
     if mode == :json do
       session_id = Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
@@ -179,8 +324,10 @@ defmodule EmissionCalculator do
       co2_str = :erlang.float_to_binary(session_co2, decimals: 3)
       water_str = :erlang.float_to_binary(water_ml, decimals: 3)
       tree_str = :erlang.float_to_binary(tree_mins, decimals: 3)
+      device = detect_device()
+      platform = platform_desc()
       
-      json = "{\"timestamp\":\"#{now}\",\"session_id\":\"#{session_id}\",\"model\":\"Gemini Flash / Baseline\",\"turn_count\":#{session_stats.steps},\"total_tokens\":#{session_tokens},\"energy_wh\":#{energy_str},\"co2_grams\":#{co2_str},\"water_ml\":#{water_str},\"tree_mins\":#{tree_str},\"version\":\"#{@version}\"}"
+      json = "{\"timestamp\":\"#{now}\",\"session_id\":\"#{session_id}\",\"device\":\"#{device}\",\"platform\":\"#{platform}\",\"model\":\"Gemini Flash / Baseline\",\"turn_count\":#{session_stats.steps},\"total_tokens\":#{session_tokens},\"energy_wh\":#{energy_str},\"co2_grams\":#{co2_str},\"water_ml\":#{water_str},\"tree_mins\":#{tree_str},\"version\":\"#{@version}\"}"
       IO.puts(json)
     else
       divider = String.duplicate("─", 74)
@@ -232,6 +379,55 @@ defmodule EmissionCalculator do
     |> Enum.chunk_every(3)
     |> Enum.join(",")
     |> String.reverse()
+  end
+
+  defp parse_json_fallback(line) do
+    session_id = extract_regex(line, ~r/"session_id"\s*:\s*"([^"]+)"/)
+    timestamp = extract_regex(line, ~r/"timestamp"\s*:\s*"([^"]+)"/)
+    device = extract_regex(line, ~r/"device"\s*:\s*"([^"]+)"/) || "unknown"
+    platform = extract_regex(line, ~r/"platform"\s*:\s*"([^"]+)"/) || "N/A"
+    total_tokens = extract_number(line, ~r/"total_tokens"\s*:\s*(\d+)/)
+    energy_wh = extract_float(line, ~r/"energy_wh"\s*:\s*([\d\.]+)/)
+    co2_grams = extract_float(line, ~r/"co2_grams"\s*:\s*([\d\.]+)/)
+    water_ml = extract_float(line, ~r/"water_ml"\s*:\s*([\d\.]+)/)
+    tree_mins = extract_float(line, ~r/"tree_mins"\s*:\s*([\d\.]+)/)
+
+    %{
+      "session_id" => session_id,
+      "timestamp" => timestamp,
+      "device" => device,
+      "platform" => platform,
+      "total_tokens" => total_tokens,
+      "energy_wh" => energy_wh,
+      "co2_grams" => co2_grams,
+      "water_ml" => water_ml,
+      "tree_mins" => tree_mins
+    }
+  end
+
+  defp extract_regex(line, regex) do
+    case Regex.run(regex, line) do
+      [_, val] -> val
+      _ -> nil
+    end
+  end
+
+  defp extract_number(line, regex) do
+    case Regex.run(regex, line) do
+      [_, val] -> String.to_integer(val)
+      _ -> 0
+    end
+  end
+
+  defp extract_float(line, regex) do
+    case Regex.run(regex, line) do
+      [_, val] ->
+        case Float.parse(val) do
+          {f, _} -> f
+          _ -> 0.0
+        end
+      _ -> 0.0
+    end
   end
 end
 

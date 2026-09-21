@@ -15,6 +15,21 @@ if [ ! -d "$TRANSCRIPT_DIR" ]; then
   exit 0
 fi
 
+# Detect device / machine platform
+if [ -z "$LONTAR_DEVICE" ]; then
+  if [ -n "$PREFIX" ] && [[ "$PREFIX" == *"com.termux"* ]] || [ -n "$TERMUX_VERSION" ]; then
+    export LONTAR_DEVICE="termux"
+  elif [ "$OS" = "Windows_NT" ] || uname -s | grep -qi "mingw\|msys\|cygwin"; then
+    export LONTAR_DEVICE="windows"
+  elif uname -s | grep -qi "darwin"; then
+    export LONTAR_DEVICE="macos"
+  else
+    export LONTAR_DEVICE="linux"
+  fi
+fi
+
+echo "💻 Operating Device Tag: $LONTAR_DEVICE"
+
 # Ensure we're in the repository
 cd "$LONTAR_REPO_DIR"
 
