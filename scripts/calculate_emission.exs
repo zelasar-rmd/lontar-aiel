@@ -6,12 +6,12 @@ defmodule EmissionCalculator do
   and calculate exact energy consumption, carbon emissions, water footprints,
   and green offset metrics for both individual turns and cumulative sessions.
 
-  Version: 0.1.0-alpha
-  Release Date: 2026-09-22
+  Version: 1.3.0
+  Release Date: 2026-09-21
   Engine: BEAM Stream Architecture
   """
 
-  @version "0.1.0-alpha"
+  @version "0.1.0-confluent.2026-09-22-19:00"
   @release_date "2026-09-22"
 
   # Energy & Emission Constants (v1.2.0 Baseline)
@@ -42,9 +42,6 @@ defmodule EmissionCalculator do
 
       :status ->
         display_status()
-
-      :offset ->
-        display_offset()
 
       :daemon ->
         run_daemon(argv)
@@ -282,29 +279,6 @@ defmodule EmissionCalculator do
     """)
   end
 
-  defp display_offset do
-    IO.puts("""
-    ========================================================================
-    🌱 LONTAR AIEL ECOLOGICAL REPAYMENT & OFFSET OPTIONS
-    ========================================================================
-    🌊 1. INDONESIAN COASTAL MANGROVE RESTORATION (LindungiHutan)
-       • Rate      : ~1 Mangrove Seedling per 12.3 kg CO₂e (or 10 kWh compute)
-       • Impact    : 4x higher sediment carbon retention than terrestrial forests
-       • Direct Link: https://lindungihutan.com/
-       
-    🌳 2. TROPICAL REFORESTATION (Katingan Mentaya Peatland Project)
-       • Rate      : ~1 Tree Growth Year per 22.0 kg CO₂e
-       • Impact    : Critical biodiversity & peatland hydrological restoration
-       
-    🪸 3. CORAL REEF RECOVERY (Coral Guardian)
-       • Rate      : ~1 Micro-Fragment per 50 kWh heavy compute
-       • Impact    : Thermal stress buffering & ocean calcification recovery
-    ========================================================================
-    Repay your carbon footprint by supporting accredited blue-carbon partners!
-    ========================================================================
-    """)
-  end
-
   defp run_daemon(argv) do
     daemon_script = Path.expand("../scripts/lontar_telemetry_daemon.exs", __DIR__)
     sub_args = Enum.reject(argv, &(&1 in ["daemon", "--daemon"]))
@@ -334,9 +308,6 @@ defmodule EmissionCalculator do
 
       Enum.any?(argv, &(&1 in ["status", "--status"])) ->
         {:status, nil}
-
-      Enum.any?(argv, &(&1 in ["offset", "--offset"])) ->
-        {:offset, nil}
 
       Enum.any?(argv, &(&1 in ["daemon", "--daemon"])) ->
         {:daemon, nil}

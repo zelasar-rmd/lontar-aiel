@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "AIEmissionEvent",
+  "namespace": "id.aag.lontar.telemetry",
+  "doc": "Lontar AIEL Anonymous Real-Time AI Inference Emission Event (v0.1.0-confluent.2026-09-22-19:00)",
+  "fields": [
+    {"name": "event_id", "type": "string", "doc": "Unique event UUID v4"},
+    {"name": "timestamp", "type": "string", "doc": "ISO8601 UTC timestamp"},
+    {"name": "session_id", "type": "string", "doc": "Hashed session identifier"},
+    {"name": "device_hash", "type": "string", "doc": "SHA256 hashed device signature"},
+    {"name": "device_platform", "type": "string", "doc": "windows | termux | macos | linux"},
+    {"name": "engine_version", "type": "string", "doc": "Lontar engine semver with timestamp"},
+    {"name": "model_tier", "type": "string", "doc": "flash | pro | heavy"},
+    {"name": "datacenter_region", "type": "string", "default": "global-avg", "doc": "Cloud region identifier"},
+    {"name": "ttft_sec", "type": "double", "default": 0.0, "doc": "Time to first token in seconds"},
+    {"name": "tps_rate", "type": "double", "default": 0.0, "doc": "Tokens per second generation rate"},
+    {"name": "prompt_tokens", "type": "long", "doc": "Prompt token count"},
+    {"name": "completion_tokens", "type": "long", "doc": "Completion token count"},
+    {"name": "total_tokens", "type": "long", "doc": "Total token count"},
+    {"name": "energy_wh", "type": "double", "doc": "Computed energy dissipation in Wh"},
+    {"name": "co2_grams", "type": "double", "doc": "Computed carbon footprint in g CO2e"},
+    {"name": "water_ml", "type": "double", "doc": "Computed evaporative cooling water in mL"},
+    {"name": "land_cm2", "type": "double", "doc": "Computed land footprint in cm2"},
+    {"name": "tree_mins", "type": "double", "doc": "Equivalent tropical tree absorption minutes"}
+  ]
+}

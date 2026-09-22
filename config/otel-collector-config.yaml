@@ -1,0 +1,59 @@
+# ==============================================================================
+# 📜 Lontar AIEL: OpenTelemetry Collector Server Configuration
+# ==============================================================================
+# Version: v0.1.0-confluent.2026-09-22-19:00
+# Usage: otelcol --config=config/otel-collector-config.yaml
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 256
+
+  # Zero-Prompt Privacy Processor: Ensure no prompt/reply text is retained
+  attributes/scrub_prompt_text:
+    actions:
+      - key: gen_ai.prompt
+        action: delete
+      - key: gen_ai.completion
+        action: delete
+      - key: db.statement
+        action: delete
+
+exporters:
+  # Export to Confluent Cloud Kafka REST Proxy / Kafka Topic via Kafka Exporter
+  kafka:
+    brokers:
+      - "${CONFLUENT_BOOTSTRAP_SERVER}"
+    protocol_version: 3.6.0
+    topic: "ai.inference.raw-events"
+    encoding: otlp_json
+    auth:
+      sasl:
+        mechanism: PLAIN
+        username: "${CONFLUENT_API_KEY}"
+        password: "${CONFLUENT_API_SECRET}"
+      tls:
+        insecure: false
+
+  # Optional local debug logging
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/scrub_prompt_text, batch]
+      exporters: [kafka]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [kafka]
