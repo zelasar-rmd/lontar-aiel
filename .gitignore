@@ -1,48 +1,55 @@
-# =============================================================================
-# Lontar AIEL: Universal .gitignore
-# Focus: Privacy, Security, and Efficiency
-# =============================================================================
+# =========================
+# LONTAR AIEL - .gitignore
+# =========================
 
-# 1. 🛡️ Security & Credentials (CRITICAL)
-# -----------------------------------------------------------------------------
-# NEVER commit Confluent API keys, certificates, or local environments
+# -------------------------
+# 1. SECURITY & CREDENTIALS
+# -------------------------
+# Never commit environment variables, keys, or tokens
 .env
+.env.*
+*.env
 confluent.env
 *.pem
 *.key
-*.p12
-*.keystore
-*.truststore
-credentials/
-secrets/
+credentials.json
+*secret*
 
-# 2. 🕵️ Privacy & User Data
-# -----------------------------------------------------------------------------
-# Exclude local user identities, telemetry buffers, and debug logs
+# -------------------------
+# 2. PRIVACY & TELEMETRY
+# -------------------------
+# Zero-Prompt Retention Guarantee - never commit raw telemetry or user identity
 identity.json
-user_anon_id*.json
-user_anon_id*.txt
+.lontar/
+*.jsonl
+transcript.jsonl
+transcript_full.jsonl
 *.log
-logs/
-telemetry_buffer/
-.local_telemetry/
+local_state/
+telemetry_cache/
 
-# 3. ⚙️ Elixir / Erlang (Efficiency)
-# -----------------------------------------------------------------------------
-# Exclude heavy compiled binaries and dependencies
-/_build/
-/deps/
-/*.ez
-erl_crash.dump
+# -------------------------
+# 3. ELIXIR & BEAM
+# -------------------------
+# Software efficiency - ignore build artifacts and dependencies
+_build/
+deps/
+*.ez
 *.beam
-.elixir_ls/
-.lexical/
+erl_crash.dump
 
-# 4. 💽 Editor & OS Data
-# -----------------------------------------------------------------------------
+# -------------------------
+# 4. OS & IDE
+# -------------------------
 .DS_Store
 Thumbs.db
+*.tmp
 .vscode/
 .idea/
-*.tmp
 *.swp
+
+# -------------------------
+# 5. DATA & LOCAL SCRATCH
+# -------------------------
+data/
+scratch/
