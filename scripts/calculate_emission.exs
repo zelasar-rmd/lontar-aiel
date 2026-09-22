@@ -124,9 +124,29 @@ defmodule EmissionCalculator do
           {device, Enum.count(group), d_tokens, d_energy, d_co2, d_water}
         end)
 
+      # Find the most recent timestamp in receipts
+      most_recent_ts =
+        receipts
+        |> Enum.map(& &1["timestamp"])
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort()
+        |> List.last()
+
+      last_updated_str =
+        if most_recent_ts do
+          # Format to YYYY-MM-DD HH:00 or clean readable date and hour
+          case Regex.run(~r/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/, most_recent_ts) do
+            [_, date, hour, min] -> "#{date} #{hour}:#{min} UTC (Latest Record: #{date} #{hour}:00)"
+            _ -> String.slice(most_recent_ts, 0, 16) <> " UTC"
+          end
+        else
+          "N/A"
+        end
+
       IO.puts("""
       #{divider}
         📜 LONTAR AIEL TELEMETRY LEDGER (GIT BRANCH: telemetry)
+        🕒 Latest Audit Entry   : #{last_updated_str}
       #{divider}
         🌐 Total Audited Sessions : #{total_sessions} session(s)
         📝 Cumulative Tokens     : #{total_tokens |> Integer.to_string() |> format_number()} tokens
