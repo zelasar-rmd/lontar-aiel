@@ -10,6 +10,7 @@
 .env.*
 *.env
 confluent.env
+confluent.env.example
 *.pem
 *.key
 credentials.json
@@ -31,7 +32,17 @@ local_state/
 telemetry_cache/
 
 # -------------------------
-# 3. ELIXIR & BEAM
+# 3. PRIVATE DOCUMENTS & JOBS
+# -------------------------
+# Private internal design, roadmaps, and deployed streaming jobs
+docs/PRD.md
+docs/ROADMAP.md
+docs/PROJECT_SCOPE.md
+docs/IMPLEMENTATION_PLAN.md
+config/flink-jobs/
+
+# -------------------------
+# 4. ELIXIR & BEAM
 # -------------------------
 # Software efficiency - ignore build artifacts and dependencies
 _build/
@@ -41,7 +52,7 @@ deps/
 erl_crash.dump
 
 # -------------------------
-# 4. OS & IDE
+# 5. OS & IDE
 # -------------------------
 .DS_Store
 Thumbs.db
@@ -51,7 +62,7 @@ Thumbs.db
 *.swp
 
 # -------------------------
-# 5. DATA & LOCAL SCRATCH
+# 6. DATA & LOCAL SCRATCH
 # -------------------------
 data/
 scratch/
