@@ -51,32 +51,57 @@ defmodule EmissionCalculator do
   end
 
   defp display_ledger do
-    user_profile = System.get_env("USERPROFILE") || System.get_env("HOME")
-    repo_dir = Path.join([user_profile, ".gemini", "antigravity-cli", "brain", "dfa9f5fb-19df-4f6f-bab5-b469e2716691", "scratch", "telemetry-clone"])
-
-    # Attempt to pull latest telemetry branch quietly if git is available
-    if File.dir?(repo_dir) do
-      System.cmd("git", ["pull", "origin", "telemetry", "--quiet"], cd: repo_dir)
+    # 1. First try reading lines directly from local git repository origin/telemetry
+    lontar_repo = Path.expand("~/lontar-aiel")
+    termux_repo = "/data/data/com.termux/files/home/lontar-aiel"
+    repo_path = cond do
+      File.dir?(Path.join(lontar_repo, ".git")) -> lontar_repo
+      File.dir?(Path.join(termux_repo, ".git")) -> termux_repo
+      true -> nil
     end
 
-    logs_dir = Path.join(repo_dir, "logs") |> String.replace("\\", "/")
+    raw_lines =
+      if repo_path do
+        System.cmd("git", ["--git-dir=#{Path.join(repo_path, ".git")}", "fetch", "origin", "telemetry", "--quiet"])
+        month = Date.utc_today() |> Calendar.strftime("%Y-%m")
+        case System.cmd("git", ["--git-dir=#{Path.join(repo_path, ".git")}", "show", "origin/telemetry:logs/#{month}.jsonl"], stderr_to_stdout: true) do
+          {output, 0} -> String.split(output, "\n")
+          _ -> []
+        end
+      else
+        []
+      end
 
-    if File.dir?(logs_dir) do
-      json_files = Path.wildcard("#{logs_dir}/*.jsonl")
+    receipts =
+      if raw_lines != [] do
+        raw_lines
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+        |> Enum.map(&parse_json_fallback/1)
+        |> Enum.reject(fn map -> map["session_id"] == nil and map["timestamp"] == nil end)
+      else
+        # Fallback to local files if cloned
+        user_profile = System.get_env("USERPROFILE") || System.get_env("HOME")
+        repo_dir = Path.join([user_profile, ".gemini", "antigravity-cli", "brain", "dfa9f5fb-19df-4f6f-bab5-b469e2716691", "scratch", "telemetry-clone"])
+        logs_dir = Path.join(repo_dir, "logs") |> String.replace("\\", "/")
 
-      receipts =
-        json_files
-        |> Enum.flat_map(fn file ->
-          file
-          |> File.stream!()
-          |> Enum.map(&String.trim/1)
-          |> Enum.reject(&(&1 == ""))
-          |> Enum.map(fn line ->
-            parse_json_fallback(line)
+        if File.dir?(logs_dir) do
+          Path.wildcard("#{logs_dir}/*.jsonl")
+          |> Enum.flat_map(fn file ->
+            file
+            |> File.stream!()
+            |> Enum.map(&String.trim/1)
+            |> Enum.reject(&(&1 == ""))
+            |> Enum.map(&parse_json_fallback/1)
+            |> Enum.reject(fn map -> map["session_id"] == nil and map["timestamp"] == nil end)
           end)
-          |> Enum.reject(fn map -> map["session_id"] == nil and map["timestamp"] == nil end)
-        end)
-        |> Enum.uniq_by(fn map -> map["session_id"] || map["timestamp"] end)
+        else
+          []
+        end
+      end
+      |> Enum.uniq_by(fn map -> map["session_id"] || map["timestamp"] end)
+
+    if receipts != [] do
 
       total_sessions = Enum.count(receipts)
       total_tokens = Enum.reduce(receipts, 0, fn r, acc -> acc + (r["total_tokens"] || 0) end)

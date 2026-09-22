@@ -2,14 +2,29 @@
 MONTH=$(date +'%Y-%m')
 REPO_DIR="/data/data/com.termux/files/home/lontar-aiel"
 
-if [ -d "$REPO_DIR/.git" ]; then
-  # Fetch in background with 3-second timeout to prevent terminal hanging on poor network
-  git --git-dir="$REPO_DIR/.git" fetch origin telemetry --quiet >/dev/null 2>&1 &
-  FETCH_PID=$!
-  (sleep 3; kill $FETCH_PID 2>/dev/null) &
-  wait $FETCH_PID 2>/dev/null
+# If --raw or -r is passed, output raw JSONL
+if [ "$1" = "--raw" ] || [ "$1" = "-r" ]; then
+  if [ -d "$REPO_DIR/.git" ]; then
+    git --git-dir="$REPO_DIR/.git" fetch origin telemetry --quiet >/dev/null 2>&1 &
+    FETCH_PID=$!
+    (sleep 3; kill $FETCH_PID 2>/dev/null) &
+    wait $FETCH_PID 2>/dev/null
 
-  git --no-pager --git-dir="$REPO_DIR/.git" show "origin/telemetry:logs/${MONTH}.jsonl" 2>/dev/null || echo "ℹ️ No telemetry records found on remote telemetry branch for $MONTH"
+    git --no-pager --git-dir="$REPO_DIR/.git" show "origin/telemetry:logs/${MONTH}.jsonl" 2>/dev/null || echo "ℹ️ No telemetry records found on remote telemetry branch for $MONTH"
+  else
+    echo "⚠️ Repository not found at $REPO_DIR"
+  fi
+  exit 0
+fi
+
+# By default, display the full summarized dashboard via Elixir engine
+if [ -f "$REPO_DIR/scripts/calculate_emission.exs" ]; then
+  elixir "$REPO_DIR/scripts/calculate_emission.exs" ledger
 else
-  echo "⚠️ Repository not found at $REPO_DIR"
+  # Fallback to git show if elixir engine is absent
+  if [ -d "$REPO_DIR/.git" ]; then
+    git --no-pager --git-dir="$REPO_DIR/.git" show "origin/telemetry:logs/${MONTH}.jsonl" 2>/dev/null || echo "ℹ️ No telemetry records found on remote telemetry branch for $MONTH"
+  else
+    echo "⚠️ Repository not found at $REPO_DIR"
+  fi
 fi
