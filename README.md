@@ -1,227 +1,219 @@
 # 📜 Lontar AI Emission Ledger (Lontar AIEL)
 
-> **Transparent AI environmental footprint tracking, literacy, and sustainability engine.**
+> **Real-Time AI Environmental Accounting, Stream Governance & Ecological Literacy Engine**  
+> Powered by **Confluent Cloud Kafka**, **Apache Flink Stream Processing**, and **Elixir BEAM**.
+
+[![Confluent Cloud](https://img.shields.io/badge/Confluent%20Cloud-Data%20Streaming-ff69b4?logo=apachekafka)](https://confluent.cloud)
+[![Apache Flink](https://img.shields.io/badge/Apache%20Flink-Stream%20Processing-E6526F?logo=apacheflink)](https://flink.apache.org)
+[![Elixir BEAM](https://img.shields.io/badge/Elixir-BEAM%20Runtime-4B275F?logo=elixir)](https://elixir-lang.org)
+[![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-OTLP%20Standard-F5A800?logo=opentelemetry)](https://opentelemetry.io)
+[![License](https://img.shields.io/badge/License-BUSL--1.1-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-v0.1.0--alpha.2026--09--22--22%3A00-green)](#)
 
 ---
 
-## 🌿 Why "Lontar"?
+## 🌿 What is Lontar AIEL?
 
-In Nusantara (Indonesian) heritage, **Lontar** refers to the ancient palm-leaf manuscripts used across centuries to record wisdom, laws, history, and scientific accounts with enduring permanence. 
+In ancient Nusantara (Indonesian) heritage, **Lontar** refers to palm-leaf manuscripts used across centuries to record wisdom, governance, science, and history with enduring permanence.
 
-**Lontar AIEL** revives this concept for the modern computational age: an immutable, transparent ledger recording the energy consumption, greenhouse gas emissions, and cooling water costs of artificial intelligence—bridging computation with ecological accountability.
+**Lontar AIEL** revives this concept for the computational age: an **immutable, real-time data streaming ledger** that captures the environmental cost of artificial intelligence—translating raw inference tokens into an auditable **3-Pillar Ecological Footprint**:
 
----
-
-## 🏛️ Core Capabilities
-
-1. **Mandatory Response Footer Protocol:**
-   Enforces a clean, standardized environmental impact summary on every AI conversation turn across IDEs, desktop applications, and terminal CLIs.
-2. **Ultra-Fast Elixir BEAM Stream Engine:**
-   Powered by the BEAM runtime (`calculate_emission.exs`), the engine stream-parses full session transcripts (`transcript.jsonl`) in sub-milliseconds with negligible memory footprint.
-3. **Confluent Data Stream Real-Time Telemetry (v1.4.0-confluent):**
-   Streams background telemetry receipts in real-time to Confluent Cloud Kafka via TLS 1.3 encrypted REST Proxy / OTLP HTTP protocols (`lontar_telemetry_daemon.exs`).
-4. **Strict Zero-Prompt Retention & Privacy Protocol:**
-   Guarantees that raw conversation text, prompts, source code, and outputs are **100% scrubbed locally** before any network event is generated.
-5. **Multi-Node Machine Attribution:**
-   Automatically distinguishes emissions across edge devices (**Termux / Android**, **Windows**, **macOS**, and **Linux**), displaying a consolidated multi-machine breakdown table.
-6. **Scientific Grounding & Ecological Offsets:**
-   Translates raw token counts into real-world resource footprints (Watt-hours, grams of $CO_2e$, milliliters of cooling water) linked to accredited conservation initiatives (*LindungiHutan* coastal mangrove restoration).
+1. 💨 **Carbon Footprint ($g CO_2e$):** Atmospheric greenhouse gas emissions derived from dynamic regional grid carbon intensity ($CIF$).
+2. 💧 **Water Footprint ($mL$):** Combined **on-site** datacenter evaporative cooling ($WUE_{\text{site}}$) and **off-site** power generation water ($WUE_{\text{source}}$).
+3. 🌿 **Land Footprint ($cm^2$):** Direct and indirect land transformation ($LIF$) required for energy generation infrastructure (solar/wind farms, hydropower, fuel extraction).
 
 ---
 
-## 📋 The Standardized Footer Format
+## 🏛️ System Architecture: Real-Time Stream Pipeline
 
-Whenever an AI agent completes a response under Lontar AIEL guidelines, it appends this standardized footprint:
+Lontar AIEL connects edge AI developer environments (IDE, CLI, Termux) to Confluent Cloud and Apache Flink with a strict **Zero-Prompt Retention Guarantee**.
 
-```markdown
-──────────────────────────────────────────────────────────────────────
-🌱 Session & Environmental Footprint
-• Tokens & Compute : Turn: ~1,250 | Session: ~16,500 tokens (Gemini 3.8 Flash)
-• Energy & Power   : Turn: ~0.25 Wh | Session: ~3.30 Wh (~0.0033 kWh)
-• Carbon Footprint : Turn: ~0.10 g | Session: ~1.32 g CO₂e
-• Water & Offset   : ~8.25 mL cooling | ~31.5 min tree absorption
-• Conservation     : LindungiHutan (Indonesian Coastal Mangrove Restoration)
-──────────────────────────────────────────────────────────────────────
+```mermaid
+flowchart TD
+    subgraph Edge ["1. Edge Client (User Machine)"]
+        A["AI Agent Interaction (Antigravity / Shell)"] --> B["lontar_telemetry_daemon.exs"]
+        B -->|"Scrub Prompt & Code (Zero-Prompt Guarantee)"| C["OTLP JSON Metrics (< 1 KB)"]
+    end
+
+    subgraph Ingestion ["2. Ingestion & Stream Governance"]
+        C -->|"HTTPS / TLS 1.3"| D["OpenTelemetry Collector (:4318)"]
+        D -->|"SASL_SSL / Avro Contract"| E["Confluent Cloud Kafka Topic: ai.inference.raw-events"]
+        SR["Confluent Schema Registry (AIEmissionEvent.avsc)"] -.->|"Enforce Schema Governance"| E
+    end
+
+    subgraph Processing ["3. Apache Flink Stream Processing"]
+        E --> F["Flink SQL Streaming Engine"]
+        G["Reference Table: Hardware Specs (GPU / TPU)"] -->|"Temporal Table Join"| F
+        H["Reference Table: Regional Grid (CIF / WUE / LIF)"] -->|"Temporal Table Join"| F
+        F -->|"Computed 3-Pillar Metrics"| I["Confluent Cloud Kafka Topic: ai.emission.enriched-receipts"]
+    end
+
+    subgraph Consumption ["4. Terminal Interface (CLI)"]
+        I --> J["lontar ledger (Live Terminal Ledger)"]
+        I --> K["lontar offset (LindungiHutan Mangrove Repayment)"]
+    end
 ```
 
 ---
 
-## 🚀 Quickstart & Universal CLI
+## 🔄 Dual-Mode Architecture: Enterprise Cloud & Local Fallback
 
-### Universal `lontar` Command (Cross-Platform)
+Lontar AIEL is engineered with **architectural resilience**. You can run it connected to enterprise cloud streams or completely offline:
+
+| Feature | Confluent Cloud Mode (`main`) | Local Git Telemetry Mode (`local-telemetry`) |
+| :--- | :--- | :--- |
+| **Data Backbone** | Confluent Cloud Kafka + Apache Flink | Local JSONL + Git branch (`origin/telemetry`) |
+| **Processing** | Real-time Temporal Table Joins & Watermarking | Local Elixir BEAM stream aggregation |
+| **Best For** | Enterprise ESG compliance, competitions, multi-tenant | Solo operators, offline work, zero-cloud dependency |
+| **Cost** | Cloud Managed | 100% Free & Open Source |
+| **Switching** | Default out-of-the-box | Run `lontar ledger` in offline mode or checkout branch |
+
+> [!TIP]
+> **Automatic Fallback Guarantee:** If your Confluent Cloud cluster is paused or credentials are not set, Lontar AIEL automatically operates in local mode without throwing errors or dropping telemetry receipts.
+
+---
+
+## 🚀 1-Line Zero-Friction Installation
+
+No Kafka configurations, no database setup, no complex dependencies.
+
+### 🪟 Windows (PowerShell)
+```powershell
+iwr -useb https://raw.githubusercontent.com/zelasar-rmd/lontar-aiel/main/scripts/install.ps1 | iex
+```
+
+### 🐧 Linux & 🍎 macOS (Bash / Zsh)
+```bash
+curl -sSL https://raw.githubusercontent.com/zelasar-rmd/lontar-aiel/main/scripts/install.sh | bash
+```
+
+### 📱 Android / Termux
+```bash
+pkg update && pkg install -y elixir git
+git clone -b main https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
+mkdir -p ~/bin && echo -e '#!/usr/bin/env bash\nelixir "$HOME/lontar-aiel/scripts/calculate_emission.exs" "$@"' > ~/bin/lontar && chmod +x ~/bin/lontar
+export PATH="$HOME/bin:$PATH"
+lontar opt-in
+```
+
+---
+
+## 💻 Terminal CLI Quickstart
+
+Once installed, use the universal `lontar` command in any terminal:
 
 ```bash
-# 1. View aggregated multi-device ledger
+# 1. Accept privacy terms & initialize background daemon
+lontar opt-in
+
+# 2. View real-time 3-pillar ecological ledger
 lontar ledger
 
-# 2. Audit current active conversation session
-lontar audit
+# 3. View LindungiHutan mangrove & coral reef offset options
+lontar offset
 
-# 3. View only the latest turn delta
-lontar audit --latest
+# 4. Check real-time daemon & Confluent connection health
+lontar status
 
-# 4. Sync session receipts to Git telemetry branch
-lontar sync
+# 5. Read the Zero-Prompt Retention Security Protocol
+lontar terms
 ```
 
-### Direct Elixir Engine Execution
+### Example Terminal Output (`lontar ledger`)
 
-```bash
-# Dual report: Latest Turn Delta + Cumulative Session Total
-elixir scripts/calculate_emission.exs
-
-# Only the latest turn delta
-elixir scripts/calculate_emission.exs --latest
-
-# View aggregated ledger from Git telemetry branch
-elixir scripts/calculate_emission.exs ledger
-
-# Check engine version & options
-elixir scripts/calculate_emission.exs --version
-elixir scripts/calculate_emission.exs --help
-```
-
----
-
-## 📦 Cross-Platform Installation
-
-### 🪟 Windows Setup
-1. Install Erlang and Elixir:
-   ```powershell
-   winget install Erlang.Erlang
-   winget install Elixir.Elixir
-   ```
-2. Clone repository:
-   ```powershell
-   git clone https://github.com/zelasar-rmd/lontar-aiel.git "$env:USERPROFILE\lontar-aiel"
-   ```
-3. Create the global `lontar` CLI wrapper in PowerShell:
-   ```powershell
-   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\bin"
-   @'
-   @echo off
-   setlocal
-   set "PATH=C:\Program Files\Erlang OTP\bin;%USERPROFILE%\scoop\apps\elixir\current\bin;%PATH%"
-   set "ELIXIR_SCRIPT=%USERPROFILE%\lontar-aiel\scripts\calculate_emission.exs"
-   set "SYNC_SCRIPT=%USERPROFILE%\lontar-aiel\scripts\sync_telemetry.sh"
-   if exist "C:\Program Files\Git\bin\bash.exe" (set "BASH_EXE=C:\Program Files\Git\bin\bash.exe") else (set "BASH_EXE=bash")
-   if "%~1"=="" goto help
-   if "%~1"=="help" goto help
-   if "%~1"=="version" (elixir "%ELIXIR_SCRIPT%" --version & goto end)
-   if "%~1"=="ledger" (elixir "%ELIXIR_SCRIPT%" ledger & goto end)
-   if "%~1"=="audit" (shift & elixir "%ELIXIR_SCRIPT%" %1 %2 %3 %4 %5 & goto end)
-   if "%~1"=="sync" (shift & "%BASH_EXE%" "%SYNC_SCRIPT%" %1 %2 %3 %4 %5 & goto end)
-   elixir "%ELIXIR_SCRIPT%" %*
-   goto end
-   :help
-   echo Lontar AIEL Universal CLI v1.3.0
-   echo Commands: lontar ledger, lontar audit, lontar sync, lontar version
-   :end
-   endlocal
-   '@ | Set-Content -Path "$env:USERPROFILE\bin\lontar.bat"
-
-   $p = [System.Environment]::GetEnvironmentVariable("Path", "User")
-   if ($p -notlike "*$env:USERPROFILE\bin*") {
-       [System.Environment]::SetEnvironmentVariable("Path", "$env:USERPROFILE\bin;$p", "User")
-   }
-   ```
-
-### 📱 Termux (Android) Setup
-```bash
-pkg update && pkg install -y elixir git ncurses-utils
-git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
-mkdir -p ~/bin
-cat << 'EOF' > ~/bin/lontar
-#!/usr/bin/env bash
-LONTAR_DIR="${HOME}/lontar-aiel"
-COMMAND="$1"
-shift || true
-case "$COMMAND" in
-  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
-  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
-  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
-  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
-  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (Termux)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
-  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
-esac
-EOF
-chmod +x ~/bin/lontar
-grep -q 'export PATH="$HOME/bin:$PATH"' ~/.bashrc || echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### 🐧 Linux (Ubuntu / Debian / Arch / Fedora) Setup
-```bash
-# Ubuntu/Debian: sudo apt install -y elixir erlang git
-# Arch Linux:    sudo pacman -S elixir git
-# Fedora:        sudo dnf install -y elixir git
-git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/.local/share/lontar-aiel
-mkdir -p ~/.local/bin
-cat << 'EOF' > ~/.local/bin/lontar
-#!/usr/bin/env bash
-LONTAR_DIR="${HOME}/.local/share/lontar-aiel"
-COMMAND="$1"
-shift || true
-case "$COMMAND" in
-  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
-  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
-  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
-  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
-  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (Linux)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
-  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
-esac
-EOF
-chmod +x ~/.local/bin/lontar
-```
-
-### 🍎 macOS Setup
-```bash
-brew install elixir git
-git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
-mkdir -p /usr/local/bin 2>/dev/null || mkdir -p ~/.local/bin
-cat << 'EOF' > ~/.local/bin/lontar
-#!/usr/bin/env bash
-LONTAR_DIR="${HOME}/lontar-aiel"
-COMMAND="$1"
-shift || true
-case "$COMMAND" in
-  ledger|logs) elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" ledger "$@" ;;
-  audit|calc)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$@" ;;
-  sync|push)   bash "${LONTAR_DIR}/scripts/sync_telemetry.sh" "$@" ;;
-  version|-v)  elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" --version ;;
-  help|-h|"")  echo "Lontar AIEL CLI v1.3.0 (macOS)"; echo "Commands: lontar ledger, lontar audit, lontar sync" ;;
-  *)           elixir "${LONTAR_DIR}/scripts/calculate_emission.exs" "$COMMAND" "$@" ;;
-esac
-EOF
-chmod +x ~/.local/bin/lontar
+```text
+──────────────────────────────────────────────────────────────────────────
+📜 LONTAR AIEL TELEMETRY LEDGER (CONFLUENT DATA STREAM)
+🕒 Latest Audit Entry   : 2026-09-22 22:15 UTC+07:00
+──────────────────────────────────────────────────────────────────────────
+🌐 Total Audited Sessions : 14 session(s)
+📝 Cumulative Tokens     : 184,250 tokens
+⚡ Total Energy Footprint : 36.850 Wh (0.03685 kWh)
+💨 Total Carbon Footprint : 14.740 g CO₂e
+💧 Total Cooling Water   : 92.12 mL
+🌳 Total Tree Equivalent : ~352.2 minutes of tropical tree absorption
+──────────────────────────────────────────────────────────────────────────
+💻 MACHINE & DEVICE FOOTPRINT BREAKDOWN:
+  🪟 WINDOWS    : 10 session(s) |    134,500 tok |   26.90 Wh |   10.76 g CO₂e
+  📱 TERMUX     :  4 session(s) |     49,750 tok |    9.95 Wh |    3.98 g CO₂e
+──────────────────────────────────────────────────────────────────────────
 ```
 
 ---
 
-## 📁 Repository Structure
+## 🛡️ Privacy & Security: Zero-Prompt Retention
+
+Because Lontar AIEL operates on developer machines alongside private code and AI conversations, **privacy is non-negotiable**:
+
+1. **Local Text Scrubbing:** Prompts, source code, and AI model outputs are **100% scrubbed locally** before any telemetry payload is constructed.
+2. **Database-Free Cryptographic Identity:** No account creation or email binding. Users are identified via an anonymous deterministic hash:
+   $$\text{user\_anon\_id} = \text{SHA256}(\text{Hardware MAC} + \text{salt})$$
+3. **Encrypted In-Transit:** All metrics are shipped over **TLS 1.3 / SASL_SSL** to Confluent Cloud.
+4. **Read the Full Protocol:** [`docs/TERMS_AND_PRIVACY.md`](docs/TERMS_AND_PRIVACY.md).
+
+---
+
+## 🏆 Confluent Cloud & Stream Governance Assets
+
+This project is built to demonstrate the capabilities of the Confluent Data Streaming Platform:
+
+* **Stream Processing with Apache Flink:** Powered by managed Flink in Confluent Cloud. Uses **Temporal Table Joins** (`FOR SYSTEM_TIME AS OF`) to combine high-velocity inference event streams with slowly changing reference tables (GPU hardware power profiles and regional grid carbon/water multipliers).
+* **Stream Governance (Confluent Schema Registry):** Located at [`config/confluent_schemas/AIEmissionEvent.avsc`](config/confluent_schemas/AIEmissionEvent.avsc). Enforces Avro data contract integrity for all edge ingestion.
+* **OpenTelemetry Ingestion:** Configured at [`config/otel-collector-config.yaml`](config/otel-collector-config.yaml) for standard OTLP metrics collection and automated payload sanitization.
+
+---
+
+## 🌿 Ecological Offsets & Repayment
+
+Lontar AIEL translates carbon footprint into actionable, local conservation actions through **LindungiHutan** (Indonesian coastal mangrove restoration):
+
+```text
+Your cumulative carbon footprint of 14.74 g CO₂e is balanced by:
+  1. 🌊 LindungiHutan Mangrove Seedling : 1 Seedling = 12,300 g CO₂e/year
+     • Direct Action : Sponsor 1 Mangrove seedling in Coastal Java
+     • Link          : https://lindungihutan.com
+  2. 🪸 Coral Reef Restoration : 1 Micro-fragment buffering in Bali Sea
+```
+
+---
+
+## 📁 Repository Structure & Branch Preservation
 
 ```text
 lontar-aiel/
-├── README.md                            # Project overview & philosophy
+├── README.md                            # Public overview (Confluent Edition)
+├── config/
+│   ├── confluent_schemas/               # Confluent Schema Registry contracts (.avsc)
+│   └── otel-collector-config.yaml       # OpenTelemetry Collector configuration
 ├── docs/
-│   ├── PRD.md                           # Product Requirement Document (v0.1.0-alpha)
-│   ├── PROJECT_SCOPE.md                 # Scope boundaries, deliverables & NFRs
-│   ├── IMPLEMENTATION_PLAN.md           # Step-by-step telemetry pipeline plan
-│   ├── ROADMAP.md                       # Comprehensive 4-phase evolution roadmap
-│   └── SPECIFICATION.md                 # Scientific formulas, constants & offset math
-├── rules/
-│   └── session-emission-reporting.md   # Universal AI rule (v1.2.0)
+│   ├── INSTALLATION_GUIDE.md            # Comprehensive multi-OS installation guide
+│   ├── TERMS_AND_PRIVACY.md             # Zero-Prompt Retention Guarantee
+│   └── SPECIFICATION.md                 # 3-Pillar scientific calculation formulas
 └── scripts/
-    ├── calculate_emission.exs           # Elixir stream transcript audit engine (v1.2.0)
-    └── sync_telemetry.sh                # Automated Termux/Linux telemetry Git exporter
+    ├── calculate_emission.exs           # CLI frontend & fallback calculation engine
+    ├── lontar_telemetry_daemon.exs      # Real-time background Confluent streamer
+    ├── install.sh                       # Linux / macOS 1-line installer
+    └── install.ps1                      # Windows PowerShell 1-line installer
 ```
 
----
+### How Branches Are Preserved
 
-## 🗺️ Development Roadmap
-See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the full 4-phase development plan—from private local incubation to public Phoenix LiveView carbon literacy registry.
+* **`main` (Default Public Branch):** Features the full **Confluent Cloud + Apache Flink** real-time streaming engine.
+* **`local-telemetry` (Preserved Branch):** Preserves the original **local Git-telemetry engine** (uses Git branch `origin/telemetry` for zero-cloud, offline recording).
+* To switch back to the purely local version at any time:
+  ```bash
+  git checkout local-telemetry
+  ```
 
 ---
 
 ## 📄 License
-Private Research & Development — All rights reserved.
+
+Copyright © 2026 Lontar AIEL Contributors.
+
+Licensed under the **Business Source License 1.1 (BUSL-1.1)**.  
+* **Use Grant:** Free for testing, evaluation, research, and non-commercial competition review.  
+* **Change Date:** 2028-09-22  
+* **Change License:** Apache License, Version 2.0  
+
+See [`LICENSE`](LICENSE) for complete terms.
