@@ -1,0 +1,15 @@
+#!/data/data/com.termux/files/usr/bin/sh
+MONTH=$(date +'%Y-%m')
+REPO_DIR="/data/data/com.termux/files/home/lontar-aiel"
+
+if [ -d "$REPO_DIR/.git" ]; then
+  # Fetch in background with 3-second timeout to prevent terminal hanging on poor network
+  git --git-dir="$REPO_DIR/.git" fetch origin telemetry --quiet >/dev/null 2>&1 &
+  FETCH_PID=$!
+  (sleep 3; kill $FETCH_PID 2>/dev/null) &
+  wait $FETCH_PID 2>/dev/null
+
+  git --git-dir="$REPO_DIR/.git" show "origin/telemetry:logs/${MONTH}.jsonl" 2>/dev/null || echo "ℹ️ No telemetry records found on remote telemetry branch for $MONTH"
+else
+  echo "⚠️ Repository not found at $REPO_DIR"
+fi

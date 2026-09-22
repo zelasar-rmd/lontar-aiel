@@ -1,0 +1,12 @@
+#!/data/data/com.termux/files/usr/bin/sh
+LOG_FILE="/data/data/com.termux/files/home/.lontar_cron.log"
+if [ -f "$LOG_FILE" ] && [ -s "$LOG_FILE" ]; then
+  echo "==================== 📜 LONTAR CRON LOGS ===================="
+  echo "Location: $LOG_FILE"
+  echo "-------------------------------------------------------------"
+  cat "$LOG_FILE"
+  echo "============================================================="
+else
+  echo "ℹ️ No cron logs generated yet at $LOG_FILE (or file is currently empty)."
+  echo "💡 Tip: Run 'lontar-sync' to execute an audit and write logs immediately."
+fi

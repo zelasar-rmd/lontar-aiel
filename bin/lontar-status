@@ -1,0 +1,29 @@
+#!/data/data/com.termux/files/usr/bin/sh
+echo "=== 🌿 LONTAR AIEL STATUS ==="
+
+CRON_LIST=$(/data/data/com.termux/files/usr/bin/crontab -l 2>/dev/null)
+
+if [ -z "$CRON_LIST" ] && [ -f /data/data/com.termux/files/usr/var/spool/cron/root ]; then
+  CRON_LIST=$(cat /data/data/com.termux/files/usr/var/spool/cron/root)
+fi
+
+if [ -z "$CRON_LIST" ]; then
+  CRON_LIST=$(crontab -l 2>/dev/null)
+fi
+
+if [ -n "$CRON_LIST" ]; then
+  LONTAR_CRON=$(echo "$CRON_LIST" | grep -i "lontar")
+  if [ -n "$LONTAR_CRON" ]; then
+    echo "$LONTAR_CRON"
+  else
+    echo "❌ No active Lontar AIEL crontab scheduled"
+  fi
+else
+  echo "❌ No active crontab scheduled"
+fi
+
+if pgrep crond >/dev/null 2>&1 || pgrep cron >/dev/null 2>&1; then
+  echo "✅ Background daemon (crond) is active"
+else
+  echo "⚠️ Background daemon (crond) is not running"
+fi

@@ -82,12 +82,16 @@ while IFS= read -r transcript; do
     LOG_FILE="${TEMP_SYNC_DIR}/logs/${MONTH}.jsonl"
     touch "$LOG_FILE"
     
-    if ! grep -q "\"session_id\": \"$SESSION_ID\"" "$LOG_FILE" 2>/dev/null; then
+    if grep -q "\"session_id\": \"$SESSION_ID\"" "$LOG_FILE" 2>/dev/null; then
+      grep -v "\"session_id\": \"$SESSION_ID\"" "$LOG_FILE" > "${LOG_FILE}.tmp" || true
+      echo "$JSON_RECEIPT" >> "${LOG_FILE}.tmp"
+      mv "${LOG_FILE}.tmp" "$LOG_FILE"
+      log "  🔄 Updated session $SESSION_ID with latest cumulative telemetry."
+      AUDIT_COUNT=$((AUDIT_COUNT + 1))
+    else
       echo "$JSON_RECEIPT" >> "$LOG_FILE"
       log "  ✅ Appended receipt for session $SESSION_ID"
       AUDIT_COUNT=$((AUDIT_COUNT + 1))
-    else
-      log "  ℹ️ Session $SESSION_ID already recorded in $MONTH.jsonl. Skipping duplicate."
     fi
   fi
 done <<< "$MODIFIED_TRANSCRIPTS"

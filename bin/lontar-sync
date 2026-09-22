@@ -1,0 +1,7 @@
+#!/data/data/com.termux/files/usr/bin/sh
+SCRIPT="/data/data/com.termux/files/home/lontar-aiel/scripts/sync_telemetry.sh"
+if [ ! -f "$SCRIPT" ]; then
+  echo "❌ Error: Could not find telemetry sync script at $SCRIPT"
+  exit 1
+fi
+exec "$SCRIPT" "$@"
