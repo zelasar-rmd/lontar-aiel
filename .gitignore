@@ -1,15 +1,48 @@
-# OS Metadata
-.DS_Store
-Thumbs.db
-*.tmp
+# =============================================================================
+# Lontar AIEL: Universal .gitignore
+# Focus: Privacy, Security, and Efficiency
+# =============================================================================
 
-# Elixir / Erlang
-_build/
-deps/
-*.ez
+# 1. 🛡️ Security & Credentials (CRITICAL)
+# -----------------------------------------------------------------------------
+# NEVER commit Confluent API keys, certificates, or local environments
+.env
+confluent.env
+*.pem
+*.key
+*.p12
+*.keystore
+*.truststore
+credentials/
+secrets/
+
+# 2. 🕵️ Privacy & User Data
+# -----------------------------------------------------------------------------
+# Exclude local user identities, telemetry buffers, and debug logs
+identity.json
+user_anon_id*.json
+user_anon_id*.txt
+*.log
+logs/
+telemetry_buffer/
+.local_telemetry/
+
+# 3. ⚙️ Elixir / Erlang (Efficiency)
+# -----------------------------------------------------------------------------
+# Exclude heavy compiled binaries and dependencies
+/_build/
+/deps/
+/*.ez
 erl_crash.dump
 *.beam
+.elixir_ls/
+.lexical/
 
-# Local data / scratch
-data/
-*.log
+# 4. 💽 Editor & OS Data
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.swp
