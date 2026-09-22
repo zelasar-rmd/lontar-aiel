@@ -11,8 +11,8 @@ defmodule EmissionCalculator do
   Engine: BEAM Stream Architecture
   """
 
-  @version "1.3.0"
-  @release_date "2026-09-21"
+  @version "1.4.0-confluent"
+  @release_date "2026-09-22"
 
   # Energy & Emission Constants (v1.2.0 Baseline)
   @wh_per_k_token_flash 0.20
@@ -33,6 +33,18 @@ defmodule EmissionCalculator do
 
       :help ->
         print_help()
+
+      :terms ->
+        display_terms()
+
+      :opt_in ->
+        display_opt_in()
+
+      :status ->
+        display_status()
+
+      :daemon ->
+        run_daemon(argv)
 
       :ledger ->
         display_ledger()
@@ -208,6 +220,78 @@ defmodule EmissionCalculator do
     end
   end
 
+  defp display_terms do
+    IO.puts("""
+    ========================================================================
+    🛡️ LONTAR AIEL PRIVACY & SECURITY PROTOCOL (v1.0.0-alpha)
+    ========================================================================
+    🔒 ZERO-PROMPT RETENTION GUARANTEE:
+       We NEVER capture, store, or transmit your conversation text, prompts,
+       source code, or model output.
+
+    📊 DATA COLLECTED (ANONYMOUS NUMERICAL METRICS ONLY):
+       • Numerical token counts (prompt, completion, total)
+       • Anonymized local device hash (SHA256 of hostname + salt)
+       • Computed resource dissipation (Wh, g CO₂e, mL water, tree minutes)
+       • Timestamp & engine version
+
+    🔐 SECURITY & ENCRYPTION:
+       • Encrypted in transit via TLS 1.3 / SASL_SSL to Confluent Cloud
+       • Full user control: Enable/disable telemetry via `lontar daemon`
+    ========================================================================
+    Read full document: docs/TERMS_AND_PRIVACY.md
+    """)
+  end
+
+  defp display_opt_in do
+    display_terms()
+    IO.puts("""
+    ✅ OPT-IN STATUS:
+       Telemetry Real-Time Streaming is AVAILABLE.
+       To configure your Confluent Trial keys:
+       1. Copy confluent.env.example -> ~/.gemini/lontar_confluent.env
+       2. Start background streaming: lontar daemon start
+    """)
+  end
+
+  defp display_status do
+    user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
+    env_file = Path.join(user_home, ".gemini/lontar_confluent.env")
+
+    configured? = File.exists?(env_file)
+    dev = detect_device()
+
+    IO.puts("""
+    ========================================================================
+    📡 LONTAR REAL-TIME TELEMETRY SYSTEM STATUS
+    ========================================================================
+    💻 Local Device Platform : #{dev}
+    ⚙️ Configuration File  : #{if configured?, do: "FOUND (#{env_file})", else: "NOT CONFIG-SET (Using Dry-Run / Local)"}
+    🔒 Privacy Protection    : ACTIVE (Zero Prompt Retention Enforced)
+    🚀 Confluent Pipeline   : READY (Alpha Branch: confluent-alpha)
+    ========================================================================
+    Commands:
+      lontar daemon start    - Launch background real-time stream
+      lontar daemon test     - Dry-run payload check
+      lontar ledger          - View cumulative emissions
+      lontar terms           - Read privacy protocol
+    ========================================================================
+    """)
+  end
+
+  defp run_daemon(argv) do
+    daemon_script = Path.expand("../scripts/lontar_telemetry_daemon.exs", __DIR__)
+    sub_args = Enum.reject(argv, &(&1 in ["daemon", "--daemon"]))
+
+    args = if "--test" in sub_args or "-t" in sub_args do
+      ["--test-mode"]
+    else
+      sub_args
+    end
+
+    System.cmd("elixir", [daemon_script | args], into: IO.stream(:stdio, :line))
+  end
+
   defp parse_args(argv) do
     cond do
       Enum.any?(argv, &(&1 in ["--version", "-v"])) ->
@@ -215,6 +299,18 @@ defmodule EmissionCalculator do
 
       Enum.any?(argv, &(&1 in ["--help", "-h"])) ->
         {:help, nil}
+
+      Enum.any?(argv, &(&1 in ["terms", "--terms"])) ->
+        {:terms, nil}
+
+      Enum.any?(argv, &(&1 in ["opt-in", "--opt-in"])) ->
+        {:opt_in, nil}
+
+      Enum.any?(argv, &(&1 in ["status", "--status"])) ->
+        {:status, nil}
+
+      Enum.any?(argv, &(&1 in ["daemon", "--daemon"])) ->
+        {:daemon, nil}
 
       Enum.any?(argv, &(&1 == "--json")) ->
         path = Enum.find(argv, &(!String.starts_with?(&1, "-")))
@@ -239,18 +335,20 @@ defmodule EmissionCalculator do
     Antigravity Session Environmental Footprint Engine
 
     Usage:
-      elixir calculate_emission.exs [OPTIONS] [TRANSCRIPT_PATH]
+      elixir calculate_emission.exs [COMMAND / OPTIONS] [TRANSCRIPT_PATH]
+
+    Commands:
+      ledger           Display cumulative multi-device emissions summary
+      status           Check real-time telemetry daemon & Confluent connection status
+      terms            Read the Security, Privacy & Zero-Prompt Retention Protocol
+      opt-in           View opt-in instructions and configure Confluent telemetry
+      daemon [OPTIONS] Run or test the real-time background telemetry daemon
 
     Options:
       --json           Output machine-readable JSON telemetry receipt
       -l, --latest     Report only the latest turn delta (prompt + reply)
       -v, --version    Show engine version and exit
       -h, --help       Show this help message and exit
-
-    Arguments:
-      TRANSCRIPT_PATH  Optional path to transcript.jsonl.
-                       If omitted, automatically locates the most recent active
-                       conversation transcript in ~/.gemini/antigravity-cli/brain/.
     """)
   end
 

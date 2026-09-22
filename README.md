@@ -16,14 +16,16 @@ In Nusantara (Indonesian) heritage, **Lontar** refers to the ancient palm-leaf m
 
 1. **Mandatory Response Footer Protocol:**
    Enforces a clean, standardized environmental impact summary on every AI conversation turn across IDEs, desktop applications, and terminal CLIs.
-2. **Ultra-Fast Elixir Stream Engine:**
+2. **Ultra-Fast Elixir BEAM Stream Engine:**
    Powered by the BEAM runtime (`calculate_emission.exs`), the engine stream-parses full session transcripts (`transcript.jsonl`) in sub-milliseconds with negligible memory footprint.
-3. **Multi-Node Machine Attribution (v1.3.0):**
+3. **Confluent Data Stream Real-Time Telemetry (v1.4.0-confluent):**
+   Streams background telemetry receipts in real-time to Confluent Cloud Kafka via TLS 1.3 encrypted REST Proxy / OTLP HTTP protocols (`lontar_telemetry_daemon.exs`).
+4. **Strict Zero-Prompt Retention & Privacy Protocol:**
+   Guarantees that raw conversation text, prompts, source code, and outputs are **100% scrubbed locally** before any network event is generated.
+5. **Multi-Node Machine Attribution:**
    Automatically distinguishes emissions across edge devices (**Termux / Android**, **Windows**, **macOS**, and **Linux**), displaying a consolidated multi-machine breakdown table.
-4. **Scientific Grounding:**
-   Translates raw token counts into real-world resource footprints (Watt-hours, grams of $CO_2e$, milliliters of evaporative cooling water).
-5. **Actionable Ecological Offsets:**
-   Connects digital carbon footprints directly to tangible conservation initiatives (tropical tree sequestration, Indonesian mangrove restoration, coral reef buffering).
+6. **Scientific Grounding & Ecological Offsets:**
+   Translates raw token counts into real-world resource footprints (Watt-hours, grams of $CO_2e$, milliliters of cooling water) linked to accredited conservation initiatives (*LindungiHutan* coastal mangrove restoration).
 
 ---
 
