@@ -145,6 +145,7 @@ defmodule LontarTelemetryDaemon do
       energy_wh = (total_tokens / 1000.0) * @wh_per_k_token
       co2_grams = energy_wh * @g_co2_per_wh
       water_ml = (total_tokens / 1000.0) * @ml_water_per_k_token
+      land_cm2 = energy_wh * 1.25
       tree_mins = co2_grams / @g_co2_per_tree_minute
 
       now = DateTime.utc_now() |> DateTime.to_iso8601()
@@ -166,6 +167,7 @@ defmodule LontarTelemetryDaemon do
         "energy_wh" => Float.round(energy_wh, 4),
         "co2_grams" => Float.round(co2_grams, 4),
         "water_ml" => Float.round(water_ml, 4),
+        "land_cm2" => Float.round(land_cm2, 4),
         "tree_mins" => Float.round(tree_mins, 4)
       }
     else
