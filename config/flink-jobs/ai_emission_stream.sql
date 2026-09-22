@@ -24,7 +24,7 @@ CREATE TABLE raw_ai_inference_events (
     water_ml DOUBLE,
     land_cm2 DOUBLE,
     tree_mins DOUBLE,
-    event_time AS TO_TIMESTAMP(`timestamp`),
+    event_time AS CAST(TO_TIMESTAMP(`timestamp`) AS TIMESTAMP_LTZ(3)),
     WATERMARK FOR event_time AS event_time - INTERVAL '5' SECOND
 ) WITH (
     'connector' = 'kafka',
@@ -33,10 +33,7 @@ CREATE TABLE raw_ai_inference_events (
     'properties.security.protocol' = 'SASL_SSL',
     'properties.sasl.mechanism' = 'PLAIN',
     'properties.sasl.jaas.config' = 'org.apache.kafka.common.security.plain.PlainLoginModule required username="${CONFLUENT_API_KEY}" password="${CONFLUENT_API_SECRET}";',
-    'format' = 'avro-confluent',
-    'avro-confluent.schema-registry.url' = '${CONFLUENT_SCHEMA_REGISTRY_URL}',
-    'avro-confluent.schema-registry.basic-auth.credentials-source' = 'USER_INFO',
-    'avro-confluent.schema-registry.basic-auth.user-info' = '${CONFLUENT_SR_API_KEY}:${CONFLUENT_SR_API_SECRET}',
+    'format' = 'json',
     'scan.startup.mode' = 'latest-offset'
 );
 
@@ -47,7 +44,9 @@ CREATE TABLE model_hardware_specs (
     p_nongpu_kw DOUBLE,
     u_gpu DOUBLE,
     u_nongpu DOUBLE,
-    baseline_tps DOUBLE
+    baseline_tps DOUBLE,
+    record_time TIMESTAMP_LTZ(3) METADATA FROM 'timestamp',
+    WATERMARK FOR record_time AS record_time - INTERVAL '1' MINUTE
 ) WITH (
     'connector' = 'upsert-kafka',
     'topic' = 'reference.model.hardware-specs',
@@ -66,7 +65,9 @@ CREATE TABLE grid_regional_metrics (
     cif_kg_co2_per_kwh DOUBLE,
     wue_site_l_per_kwh DOUBLE,
     wue_source_l_per_kwh DOUBLE,
-    lif_cm2_per_kwh DOUBLE
+    lif_cm2_per_kwh DOUBLE,
+    record_time TIMESTAMP_LTZ(3) METADATA FROM 'timestamp',
+    WATERMARK FOR record_time AS record_time - INTERVAL '1' MINUTE
 ) WITH (
     'connector' = 'upsert-kafka',
     'topic' = 'reference.grid.regional-metrics',
@@ -121,9 +122,9 @@ SELECT
         (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu) * g.pue)) * g.cif_kg_co2_per_kwh * 1000.0 AS co2_grams,
     -- Water in mL
     (((((e.ttft_sec + (e.completion_tokens / COALESCE(NULLIF(e.tps_rate, 0.0), h.baseline_tps))) / 3600.0) *
-        (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu)) * g.wue_site) +
+        (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu)) * g.wue_site_l_per_kwh) +
      ((((e.ttft_sec + (e.completion_tokens / COALESCE(NULLIF(e.tps_rate, 0.0), h.baseline_tps))) / 3600.0) *
-        (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu) * g.pue) * g.wue_source)) * 1000.0 AS water_ml,
+        (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu) * g.pue) * g.wue_source_l_per_kwh)) * 1000.0 AS water_ml,
     -- Land in cm2
     ((((e.ttft_sec + (e.completion_tokens / COALESCE(NULLIF(e.tps_rate, 0.0), h.baseline_tps))) / 3600.0) *
         (h.p_gpu_kw * h.u_gpu + h.p_nongpu_kw * h.u_nongpu) * g.pue)) * g.lif_cm2_per_kwh AS land_cm2,

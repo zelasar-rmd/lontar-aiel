@@ -104,11 +104,18 @@ defmodule LontarTelemetryDaemon do
   end
 
   def find_latest_transcript do
-    base_dir = Path.expand("~/.gemini/antigravity-cli/brain")
+    base_dirs = [
+      Path.expand("~/.gemini/antigravity-cli/brain"),
+      Path.expand("~/.gemini/antigravity/brain")
+    ]
 
-    case Path.wildcard("#{base_dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true) do
+    files = Enum.flat_map(base_dirs, fn dir ->
+      Path.wildcard("#{dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true)
+    end)
+
+    case files do
       [] -> nil
-      files ->
+      _ ->
         Enum.max_by(files, fn f ->
           case File.stat(f) do
             {:ok, stat} -> stat.mtime
@@ -245,19 +252,30 @@ defmodule LontarTelemetryDaemon do
   end
 
   def send_to_confluent(config, json_payload) do
-    url = "#{String.trim_trailing(config.rest_endpoint, "/")}/topics/#{config.topic}"
+    # Convert to Confluent Cloud API v3 format if URL doesn't contain it
+    base_url = String.trim_trailing(config.rest_endpoint, "/")
+    url =
+      if String.contains?(base_url, "/kafka/v3/clusters") do
+        "#{base_url}/topics/#{config.topic}/records"
+      else
+        "#{base_url}/topics/#{config.topic}"
+      end
+
     auth_header = "Basic " <> Base.encode64("#{config.api_key}:#{config.api_secret}")
 
     headers = [
-      {~c"content-type", ~c"application/vnd.kafka.json.v2+json"},
+      {~c"content-type", ~c"application/json"},
       {~c"authorization", String.to_charlist(auth_header)}
     ]
 
-    post_body = encode_json(%{
-      "records" => [%{"value" => decode_json_simple(json_payload)}]
-    })
+    post_body =
+      if String.contains?(base_url, "/kafka/v3/clusters") do
+        ~s({"value": {"type": "JSON", "data": #{json_payload}}})
+      else
+        ~s({"records": [{"value": #{json_payload}}]})
+      end
 
-    case :httpc.request(:post, {String.to_charlist(url), headers, ~c"application/vnd.kafka.json.v2+json", String.to_charlist(post_body)}, [], []) do
+    case :httpc.request(:post, {String.to_charlist(url), headers, ~c"application/json", String.to_charlist(post_body)}, [], []) do
       {:ok, {{_, 200, _}, _, response_body}} ->
         IO.puts("✅ Successfully streamed receipt to Confluent Topic '#{config.topic}'")
         IO.puts("   Response: #{to_string(response_body)}")

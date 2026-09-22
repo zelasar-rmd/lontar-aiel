@@ -14,6 +14,8 @@ confluent.env
 *.key
 credentials.json
 *secret*
+api-key*.txt
+*ready_stream*
 
 # -------------------------
 # 2. PRIVACY & TELEMETRY
@@ -53,3 +55,6 @@ Thumbs.db
 # -------------------------
 data/
 scratch/
+*.tgz
+*.tar.gz
+*.tar
