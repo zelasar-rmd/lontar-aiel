@@ -8,11 +8,11 @@ defmodule LontarTelemetryDaemon do
   to ensure zero-prompt retention, computes resource footprint metrics, and streams
   telemetry receipts to Confluent Cloud via REST Proxy / OTLP HTTP.
 
-  Version: 1.4.0-confluent
+  Version: 0.1.0-alpha
   Engine: BEAM BEAM Process / Inets Engine
   """
 
-  @version "1.4.0-confluent"
+  @version "0.1.0-alpha"
   @wh_per_k_token 0.20
   @g_co2_per_wh 0.40
   @ml_water_per_k_token 0.50
@@ -103,6 +103,33 @@ defmodule LontarTelemetryDaemon do
     :crypto.hash(:sha256, "#{hostname}_lontar_salt_2026") |> Base.encode16(case: :lower)
   end
 
+  def get_or_create_device_uuid do
+    user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
+    config_file = Path.join(user_home, ".gemini/lontar.json")
+
+    if File.exists?(config_file) do
+      case File.read(config_file) do
+        {:ok, content} ->
+          case Regex.run(~r/"device_uuid"\s*:\s*"([^"]+)"/, content) do
+            [_, uuid] -> uuid
+            _ -> create_and_store_device_uuid(config_file)
+          end
+        _ -> create_and_store_device_uuid(config_file)
+      end
+    else
+      create_and_store_device_uuid(config_file)
+    end
+  end
+
+  defp create_and_store_device_uuid(config_file) do
+    dir = Path.dirname(config_file)
+    File.mkdir_p!(dir)
+    new_uuid = generate_uuid_v4()
+    json = "{\"device_uuid\":\"#{new_uuid}\",\"created_at\":\"#{DateTime.utc_now() |> DateTime.to_iso8601()}\"}"
+    File.write!(config_file, json)
+    new_uuid
+  end
+
   def find_latest_transcript do
     base_dir = Path.expand("~/.gemini/antigravity-cli/brain")
 
@@ -151,11 +178,13 @@ defmodule LontarTelemetryDaemon do
       now = DateTime.utc_now() |> DateTime.to_iso8601()
       device = detect_device()
       device_hash = generate_device_hash()
+      device_uuid = get_or_create_device_uuid()
 
       %{
         "event_id" => generate_uuid_v4(),
         "timestamp" => now,
         "session_id" => session_id,
+        "device_uuid" => device_uuid,
         "device" => device,
         "device_hash" => String.slice(device_hash, 0, 16),
         "engine_version" => @version,
