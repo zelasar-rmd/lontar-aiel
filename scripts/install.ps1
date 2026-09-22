@@ -1,69 +1,41 @@
-<#
-.SYNOPSIS
-Lontar AIEL: Universal Windows Installation Script
-Document Version: v0.1.0-alpha.2026-09-22-19:00
-#>
+# Lontar AIEL Universal Installer (Windows PowerShell)
 
-Write-Host "📦 Welcome to Lontar AIEL Zero-Friction Setup!" -ForegroundColor Cyan
-Write-Host "─────────────────────────────────────────────────────────" -ForegroundColor DarkGray
+Write-Host "📦 Installing Lontar AIEL CLI..." -ForegroundColor Cyan
 
-# 1. Dependency Checks
-if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
-    Write-Error "❌ Git is required but it's not installed. Please install Git for Windows."
-    exit 1
-}
-
+# Check Elixir
 if (-not (Get-Command "elixir" -ErrorAction SilentlyContinue)) {
-    Write-Error "❌ Elixir is required but it's not installed."
-    Write-Host "👉 Install it via Winget: winget install Elixir.Elixir" -ForegroundColor Yellow
+    Write-Host "⚠️  Elixir is not installed." -ForegroundColor Yellow
+    Write-Host "Please install Elixir (e.g., 'choco install elixir' or 'winget install Elixir.Elixir') and run this script again."
     exit 1
 }
 
-# 2. Setup Directories
-$InstallDir = "$env:USERPROFILE\lontar-aiel"
-$BinDir = "$env:USERPROFILE\.local\bin"
-if (-not (Test-Path $BinDir)) {
-    New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
+if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
+    Write-Host "⚠️  Git is not installed." -ForegroundColor Yellow
+    Write-Host "Please install Git and run this script again."
+    exit 1
 }
 
-# 3. Clone or Update Repository
-if (Test-Path "$InstallDir\.git") {
-    Write-Host "🔄 Updating existing Lontar AIEL installation..." -ForegroundColor Blue
-    Set-Location $InstallDir
-    git fetch
-    git checkout confluent-alpha 2>$null
-    if (-not $?) { git checkout main }
-    git pull origin confluent-alpha 2>$null
-    if (-not $?) { git pull origin main }
+$DEST_DIR = "$env:USERPROFILE\lontar-aiel"
+# Using an existing path folder that usually works or standard script path
+$BIN_DIR = "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps"
+
+if (Test-Path "$DEST_DIR\.git") {
+    Write-Host "🔄 Updating existing installation at $DEST_DIR..."
+    git -C "$DEST_DIR" fetch --all
+    git -C "$DEST_DIR" checkout confluent-alpha
+    git -C "$DEST_DIR" pull origin confluent-alpha
 } else {
-    Write-Host "📥 Downloading Lontar AIEL..." -ForegroundColor Blue
-    $gitArgs = "clone", "--branch", "confluent-alpha", "https://github.com/zelasar-rmd/lontar-aiel.git", $InstallDir
-    $process = Start-Process git -ArgumentList $gitArgs -Wait -NoNewWindow -PassThru
-    if ($process.ExitCode -ne 0) {
-        git clone https://github.com/zelasar-rmd/lontar-aiel.git $InstallDir
-    }
+    Write-Host "📥 Cloning Lontar AIEL repository to $DEST_DIR..."
+    git clone -b confluent-alpha https://github.com/zelasar-rmd/lontar-aiel.git "$DEST_DIR"
 }
 
-# 4. Create Executable Wrapper
-Write-Host "⚙️ Creating 'lontar' CLI wrapper..." -ForegroundColor Blue
-$BatWrapper = "$BinDir\lontar.bat"
-$BatContent = "@echo off`r`nelixir `"$InstallDir\scripts\calculate_emission.exs`" %*"
-Set-Content -Path $BatWrapper -Value $BatContent -Encoding UTF8
-
-# 5. Path Setup Instructions
-$UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-if ($UserPath -notmatch [regex]::Escape($BinDir)) {
-    Write-Host "⚠️  NOTE: '$BinDir' is not in your PATH." -ForegroundColor Yellow
-    Write-Host "👉 Adding it to your User PATH environment variable automatically..." -ForegroundColor Cyan
-    [Environment]::SetEnvironmentVariable("PATH", "$BinDir;$UserPath", "User")
-    $env:PATH = "$BinDir;$env:PATH"
-    Write-Host "✅ PATH updated. You may need to restart your terminal to use 'lontar' globally." -ForegroundColor Green
+Write-Host "⚙️  Setting up CLI wrapper 'lontar.bat'..."
+if (-not (Test-Path $BIN_DIR)) {
+    New-Item -ItemType Directory -Force -Path $BIN_DIR | Out-Null
 }
 
-Write-Host "─────────────────────────────────────────────────────────" -ForegroundColor DarkGray
-Write-Host "✅ Installation Complete!" -ForegroundColor Green
-Write-Host "🚀 Initializing Lontar AIEL and reviewing Privacy Protocol..." -ForegroundColor Magenta
-Write-Host ""
+$BatContent = "@echo off`r`nelixir `"%USERPROFILE%\lontar-aiel\scripts\calculate_emission.exs`" %*"
+Set-Content -Path "$BIN_DIR\lontar.bat" -Value $BatContent
 
-# 6. Trigger initial opt-in
-& $BatWrapper opt-in
+Write-Host "✅ Installation complete!" -ForegroundColor Green
+Write-Host "🚀 Run 'lontar opt-in' to initialize the telemetry daemon."
