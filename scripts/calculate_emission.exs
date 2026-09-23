@@ -221,37 +221,63 @@ defmodule EmissionCalculator do
   end
 
   defp display_terms do
-    IO.puts("""
-    ========================================================================
-    🛡️ LONTAR AIEL PRIVACY & SECURITY PROTOCOL (v1.0.0-alpha)
-    ========================================================================
-    🔒 ZERO-PROMPT RETENTION GUARANTEE:
-       We NEVER capture, store, or transmit your conversation text, prompts,
-       source code, or model output.
-
-    📊 DATA COLLECTED (ANONYMOUS NUMERICAL METRICS ONLY):
-       • Numerical token counts (prompt, completion, total)
-       • Anonymized local device hash (SHA256 of hostname + salt)
-       • Computed resource dissipation (Wh, g CO₂e, mL water, tree minutes)
-       • Timestamp & engine version
-
-    🔐 SECURITY & ENCRYPTION:
-       • Encrypted in transit via TLS 1.3 / SASL_SSL to Confluent Cloud
-       • Full user control: Enable/disable telemetry via `lontar daemon`
-    ========================================================================
-    Read full document: docs/TERMS_AND_PRIVACY.md
-    """)
+    display_opt_in_statement()
   end
 
   defp display_opt_in do
-    display_terms()
+    display_opt_in_statement()
     IO.puts("""
-    ✅ OPT-IN STATUS:
-       Telemetry Real-Time Streaming is AVAILABLE.
-       To configure your Confluent Trial keys:
-       1. Copy confluent.env.example -> ~/.gemini/lontar_confluent.env
-       2. Start background streaming: lontar daemon start
+    ========================================================================
+    ✅ OPT-IN & INITIALIZATION STATUS:
+    ========================================================================
+       1. To configure your Confluent Streaming keys:
+          Copy confluent.env.example -> ~/.gemini/lontar_confluent.env
+       2. To launch background streaming:
+          lontar daemon start
+       3. To check real-time system status:
+          lontar status
+    ========================================================================
     """)
+  end
+
+  defp display_opt_in_statement do
+    statement_path = Path.expand("../docs/OPT_IN_STATEMENT.md", __DIR__)
+    termux_path = "/data/data/com.termux/files/home/lontar-aiel/docs/OPT_IN_STATEMENT.md"
+    home_dir = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
+    alt_paths = [
+      statement_path,
+      termux_path,
+      Path.join(home_dir, ".local/share/lontar-aiel/docs/OPT_IN_STATEMENT.md"),
+      Path.join(home_dir, "lontar-aiel/docs/OPT_IN_STATEMENT.md")
+    ]
+
+    target = Enum.find(alt_paths, &File.exists?/1)
+
+    if target do
+      IO.puts("\n" <> File.read!(target) <> "\n")
+    else
+      IO.puts("""
+      ========================================================================
+      🛡️ LONTAR AIEL PRIVACY & OPT-IN PROTOCOL (v1.4.0)
+      ========================================================================
+      🔒 ZERO-PROMPT RETENTION GUARANTEE:
+         We NEVER capture, store, or transmit your conversation text, prompts,
+         source code, or model output.
+
+      📊 DATA COLLECTED (ANONYMOUS NUMERICAL METRICS ONLY):
+         • Numerical token counts (prompt, completion, total)
+         • Anonymized local device hash (SHA256 of hostname + salt)
+         • Computed resource dissipation (Wh, g CO₂e, mL water, tree minutes)
+         • Timestamp & engine version
+
+      🔐 LEGAL & JURISDICTION:
+         • Republic of Indonesia (Personal Data Protection Act - Law No. 27/2022)
+         • Primary processing in Jakarta Data Center infrastructure
+         • Evaluation period: 28 days public benchmark & stress test
+      ========================================================================
+      Read full document: docs/OPT_IN_STATEMENT.md
+      """)
+    end
   end
 
   defp display_status do

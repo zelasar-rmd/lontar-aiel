@@ -47,4 +47,7 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
 fi
 
 echo "✅ Installation complete!"
-echo "🚀 Run 'lontar opt-in' to initialize the telemetry daemon."
+echo ""
+echo "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:"
+"$BIN_DIR/lontar" opt-in
+

@@ -38,4 +38,6 @@ $BatContent = "@echo off`r`nelixir `"%USERPROFILE%\lontar-aiel\scripts\calculate
 Set-Content -Path "$BIN_DIR\lontar.bat" -Value $BatContent
 
 Write-Host "✅ Installation complete!" -ForegroundColor Green
-Write-Host "🚀 Run 'lontar opt-in' to initialize the telemetry daemon."
+Write-Host ""
+Write-Host "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:" -ForegroundColor Cyan
+& "$BIN_DIR\lontar.bat" opt-in
