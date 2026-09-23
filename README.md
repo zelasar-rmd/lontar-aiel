@@ -149,7 +149,7 @@ Because Lontar AIEL operates on developer machines alongside private code and AI
 2. **Database-Free Cryptographic Identity:** No account creation or email binding. Users are identified via an anonymous deterministic hash:
    $$\text{user\_anon\_id} = \text{SHA256}(\text{Hardware MAC} + \text{salt})$$
 3. **Encrypted In-Transit:** All metrics are shipped over **TLS 1.3 / SASL_SSL** to Confluent Cloud.
-4. **Read the Full Protocol:** [`docs/TERMS_AND_PRIVACY.md`](docs/TERMS_AND_PRIVACY.md).
+4. **Read the Full Protocol & Opt-In Terms:** [`docs/TERMS_AND_PRIVACY.md`](docs/TERMS_AND_PRIVACY.md) and [`docs/OPT_IN_STATEMENT.md`](docs/OPT_IN_STATEMENT.md).
 
 ---
 
@@ -187,6 +187,7 @@ lontar-aiel/
 │   └── otel-collector-config.yaml       # OpenTelemetry Collector configuration
 ├── docs/
 │   ├── INSTALLATION_GUIDE.md            # Comprehensive multi-OS installation guide
+│   ├── OPT_IN_STATEMENT.md              # Real-Time Telemetry & Open Ledger Opt-In Terms
 │   ├── TERMS_AND_PRIVACY.md             # Zero-Prompt Retention Guarantee
 │   └── SPECIFICATION.md                 # 3-Pillar scientific calculation formulas
 └── scripts/
