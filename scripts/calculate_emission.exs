@@ -281,8 +281,10 @@ defmodule EmissionCalculator do
   defp display_status do
     user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
     env_file = Path.join(user_home, ".gemini/lontar_confluent.env")
+    pid_file = Path.join(user_home, ".gemini/lontar_daemon.pid")
 
     configured? = File.exists?(env_file) or File.exists?("confluent.env") or File.exists?(".env")
+    daemon_running? = check_pid_alive(pid_file)
     dev = detect_device()
     status_text = if configured?, do: "ACTIVE (Custom Local .env)", else: "ACTIVE (Zero-Config Public Stream)"
 
@@ -292,12 +294,16 @@ defmodule EmissionCalculator do
     ========================================================================
     💻 Local Device Platform : #{dev}
     ⚙️ Configuration Mode    : #{status_text}
+    📡 Background Daemon     : #{if daemon_running?, do: "ACTIVE (Streaming in background)", else: "STOPPED"}
     🔒 Privacy Protection    : ACTIVE (Zero Prompt Retention Enforced)
     🚀 Confluent Pipeline   : CONNECTED (Cluster: ap-southeast-3)
     ========================================================================
     Commands:
-      lontar ledger          - View cumulative emissions
+      lontar daemon start    - Launch background real-time stream (Detached)
+      lontar daemon stop     - Stop background real-time stream
+      lontar daemon status   - Check background daemon status
       lontar daemon test     - Dry-run payload check
+      lontar ledger          - View cumulative emissions
       lontar terms           - Read privacy protocol
     ========================================================================
     """)
@@ -305,15 +311,104 @@ defmodule EmissionCalculator do
 
   defp run_daemon(argv) do
     daemon_script = Path.expand("../scripts/lontar_telemetry_daemon.exs", __DIR__)
+    user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
+    pid_file = Path.join(user_home, ".gemini/lontar_daemon.pid")
+    log_file = Path.join(user_home, ".gemini/lontar_daemon.log")
     sub_args = Enum.reject(argv, &(&1 in ["daemon", "--daemon"]))
 
-    args = if "--test" in sub_args or "-t" in sub_args do
-      ["--test-mode"]
-    else
-      sub_args
-    end
+    case sub_args do
+      ["start" | _] ->
+        start_daemon_detached(daemon_script, pid_file, log_file)
 
-    System.cmd("elixir", [daemon_script | args], into: IO.stream(:stdio, :line))
+      ["stop" | _] ->
+        stop_daemon(pid_file)
+
+      ["status" | _] ->
+        status_daemon(pid_file, log_file)
+
+      ["test" | _] ->
+        System.cmd("elixir", [daemon_script, "--test-mode"], into: IO.stream(:stdio, :line))
+
+      _ ->
+        if "--test" in sub_args or "-t" in sub_args do
+          System.cmd("elixir", [daemon_script, "--test-mode"], into: IO.stream(:stdio, :line))
+        else
+          # Interactive / foreground run
+          System.cmd("elixir", [daemon_script | sub_args], into: IO.stream(:stdio, :line))
+        end
+    end
+  end
+
+  defp start_daemon_detached(daemon_script, pid_file, log_file) do
+    if check_pid_alive(pid_file) do
+      pid = File.read!(pid_file) |> String.trim()
+      IO.puts("⚠️ Lontar telemetry daemon is already running in background (PID: #{pid}).")
+      IO.puts("   To view logs: cat #{log_file}")
+      IO.puts("   To stop: lontar daemon stop")
+    else
+      File.mkdir_p!(Path.dirname(pid_file))
+      cmd = "nohup elixir \"#{daemon_script}\" >> \"#{log_file}\" 2>&1 & echo $!"
+      {output, 0} = System.cmd("sh", ["-c", cmd])
+      pid = String.trim(output)
+      File.write!(pid_file, pid)
+
+      IO.puts("""
+      ========================================================================
+      🚀 LONTAR TELEMETRY DAEMON LAUNCHED IN BACKGROUND
+      ========================================================================
+      ✅ Status : Active & detached
+      🆔 PID    : #{pid}
+      📜 Log    : #{log_file}
+      ========================================================================
+      Useful Commands:
+        lontar daemon status   - Check daemon process
+        lontar daemon stop     - Terminate background streaming
+        cat #{log_file}        - Inspect live streaming logs
+      ========================================================================
+      """)
+    end
+  end
+
+  defp stop_daemon(pid_file) do
+    if File.exists?(pid_file) do
+      pid = File.read!(pid_file) |> String.trim()
+      case System.cmd("kill", [pid], stderr_to_stdout: true) do
+        {_, 0} ->
+          File.rm(pid_file)
+          IO.puts("🛑 Lontar telemetry daemon (PID: #{pid}) successfully stopped.")
+        {err, _} ->
+          File.rm(pid_file)
+          IO.puts("ℹ️ Daemon was not actively running. Cleaned stale PID file. (#{String.trim(err)})")
+      end
+    else
+      IO.puts("ℹ️ No active Lontar telemetry daemon PID file found.")
+    end
+  end
+
+  defp status_daemon(pid_file, log_file) do
+    if check_pid_alive(pid_file) do
+      pid = File.read!(pid_file) |> String.trim()
+      IO.puts("✅ Lontar telemetry daemon is RUNNING in background (PID: #{pid}).")
+      IO.puts("   Log location: #{log_file}")
+    else
+      IO.puts("🛑 Lontar telemetry daemon is NOT running.")
+    end
+  end
+
+  defp check_pid_alive(pid_file) do
+    if File.exists?(pid_file) do
+      pid = File.read!(pid_file) |> String.trim()
+      if pid != "" do
+        case System.cmd("kill", ["-0", pid], stderr_to_stdout: true) do
+          {_, 0} -> true
+          _ -> false
+        end
+      else
+        false
+      end
+    else
+      false
+    end
   end
 
   defp parse_args(argv) do
@@ -330,11 +425,11 @@ defmodule EmissionCalculator do
       Enum.any?(argv, &(&1 in ["opt-in", "--opt-in"])) ->
         {:opt_in, nil}
 
-      Enum.any?(argv, &(&1 in ["status", "--status"])) ->
-        {:status, nil}
-
       Enum.any?(argv, &(&1 in ["daemon", "--daemon"])) ->
         {:daemon, nil}
+
+      Enum.any?(argv, &(&1 in ["status", "--status"])) ->
+        {:status, nil}
 
       Enum.any?(argv, &(&1 == "--json")) ->
         path = Enum.find(argv, &(!String.starts_with?(&1, "-")))

@@ -23,7 +23,24 @@ else
 fi
 
 if pgrep crond >/dev/null 2>&1 || pgrep cron >/dev/null 2>&1; then
-  echo "✅ Background daemon (crond) is active"
+  echo "✅ Background cron daemon (crond) is active"
 else
-  echo "⚠️ Background daemon (crond) is not running"
+  echo "⚠️ Background cron daemon (crond) is not running"
+fi
+
+USER_HOME="${HOME:-/data/data/com.termux/files/home}"
+PID_FILE="$USER_HOME/.gemini/lontar_daemon.pid"
+if [ ! -f "$PID_FILE" ]; then
+  PID_FILE="/root/.gemini/lontar_daemon.pid"
+fi
+
+if [ -f "$PID_FILE" ]; then
+  DAEMON_PID=$(cat "$PID_FILE" 2>/dev/null | tr -d '[:space:]')
+  if [ -n "$DAEMON_PID" ] && kill -0 "$DAEMON_PID" 2>/dev/null; then
+    echo "✅ Real-time telemetry stream daemon is RUNNING (PID: $DAEMON_PID)"
+  else
+    echo "ℹ️ Real-time telemetry stream daemon is STOPPED"
+  fi
+else
+  echo "ℹ️ Real-time telemetry stream daemon is STOPPED"
 fi
