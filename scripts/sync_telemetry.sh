@@ -99,7 +99,7 @@ done <<< "$MODIFIED_TRANSCRIPTS"
 if [ "$AUDIT_COUNT" -gt 0 ]; then
   log "🚀 Committing $AUDIT_COUNT session receipt(s) to telemetry branch..."
   cd "$TEMP_SYNC_DIR"
-  git add logs/
+  git add -f logs/
   git commit -m "telemetry: daily automated audit $(date +'%Y-%m-%d') [${AUDIT_COUNT} session(s)]" --quiet
   git push origin telemetry --quiet
   log "✨ Successfully pushed $AUDIT_COUNT telemetry receipt(s) to zelasar-rmd/lontar-aiel (branch: telemetry)!"
