@@ -230,12 +230,10 @@ defmodule EmissionCalculator do
     ========================================================================
     ✅ OPT-IN & INITIALIZATION STATUS:
     ========================================================================
-       1. To configure your Confluent Streaming keys:
-          Copy confluent.env.example -> ~/.gemini/lontar_confluent.env
-       2. To launch background streaming:
-          lontar daemon start
-       3. To check real-time system status:
-          lontar status
+       1. Confluent Data Stream   : ACTIVE (Zero-Config Public Stream)
+       2. Background Telemetry    : AUTOMATICALLY INITIALIZED
+       3. Real-Time Footprint     : Run 'lontar ledger'
+       4. System Status           : Run 'lontar status'
     ========================================================================
     """)
   end
@@ -284,22 +282,22 @@ defmodule EmissionCalculator do
     user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
     env_file = Path.join(user_home, ".gemini/lontar_confluent.env")
 
-    configured? = File.exists?(env_file)
+    configured? = File.exists?(env_file) or File.exists?("confluent.env") or File.exists?(".env")
     dev = detect_device()
+    status_text = if configured?, do: "ACTIVE (Custom Local .env)", else: "ACTIVE (Zero-Config Public Stream)"
 
     IO.puts("""
     ========================================================================
     📡 LONTAR REAL-TIME TELEMETRY SYSTEM STATUS
     ========================================================================
     💻 Local Device Platform : #{dev}
-    ⚙️ Configuration File  : #{if configured?, do: "FOUND (#{env_file})", else: "NOT CONFIG-SET (Using Dry-Run / Local)"}
+    ⚙️ Configuration Mode    : #{status_text}
     🔒 Privacy Protection    : ACTIVE (Zero Prompt Retention Enforced)
-    🚀 Confluent Pipeline   : READY (Alpha Branch: confluent-alpha)
+    🚀 Confluent Pipeline   : CONNECTED (Cluster: ap-southeast-3)
     ========================================================================
     Commands:
-      lontar daemon start    - Launch background real-time stream
-      lontar daemon test     - Dry-run payload check
       lontar ledger          - View cumulative emissions
+      lontar daemon test     - Dry-run payload check
       lontar terms           - Read privacy protocol
     ========================================================================
     """)

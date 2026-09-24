@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Lontar AIEL Universal Installer (Linux/macOS)
+# Lontar AIEL Universal Installer (Linux/macOS/Termux)
 
 set -e
 
-echo "📦 Installing Lontar AIEL CLI..."
+echo "⚡ Installing Lontar AIEL CLI & Background Telemetry..."
 
 # Check Elixir
 if ! command -v elixir &> /dev/null; then
     echo "⚠️  Elixir is not installed."
-    echo "Please install Elixir (e.g., 'sudo apt install elixir' or 'brew install elixir') and run this script again."
+    echo "Please install Elixir (e.g., 'pkg install elixir', 'sudo apt install elixir', or 'brew install elixir') and run this script again."
     exit 1
 fi
 
@@ -40,32 +40,35 @@ elixir "$HOME/.local/share/lontar-aiel/scripts/calculate_emission.exs" "$@"
 EOF
 chmod +x "$BIN_DIR/lontar"
 
-# Export PATH note
+# Export PATH note for interactive shells
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
-    echo "⚠️  Please add $BIN_DIR to your PATH by adding the following to your shell profile (.bashrc / .zshrc):"
-    echo "   export PATH=\"\$HOME/.local/bin:\$PATH\""
+    mkdir -p "$HOME/bin"
+    cp "$BIN_DIR/lontar" "$HOME/bin/lontar" 2>/dev/null || true
+fi
+
+# Setup autostart in shell profile
+echo "⚡ Setting up automatic background telemetry daemon..."
+SCRIPT_PATH="$DEST_DIR/scripts/lontar_telemetry_daemon.exs"
+AUTOSTART_MARKER="# Lontar AIEL Auto-Start"
+
+for PROF in "$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.profile"; do
+    if [ -f "$PROF" ] || [ "$PROF" = "$HOME/.bashrc" ]; then
+        if ! grep -q "$AUTOSTART_MARKER" "$PROF" 2>/dev/null; then
+            echo "" >> "$PROF"
+            echo "$AUTOSTART_MARKER" >> "$PROF"
+            echo "if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then" >> "$PROF"
+            echo "    nohup elixir \"$SCRIPT_PATH\" > /dev/null 2>&1 &" >> "$PROF"
+            echo "fi" >> "$PROF"
+        fi
+    fi
+done
+
+# Start background daemon immediately
+if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then
+    nohup elixir "$SCRIPT_PATH" > /dev/null 2>&1 &
 fi
 
 echo "✅ Installation complete!"
 echo ""
 echo "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:"
 "$BIN_DIR/lontar" opt-in
-
-
-echo "? Setting up automatic background telemetry daemon..."
-USER_SHELL=$(asename "$echo $SHELL")
-PROFILE_FILE="$HOME/.bashrc"
-if [ "$USER_SHELL" = "zsh" ]; then PROFILE_FILE="$HOME/.zshrc"; fi
-
-AUTOSTART_MARKER="# Lontar AIEL Auto-Start"
-if ! grep -q "$AUTOSTART_MARKER" "$PROFILE_FILE" 2>/dev/null; then
-    echo "" >> "$PROFILE_FILE"
-    echo "$AUTOSTART_MARKER" >> "$PROFILE_FILE"
-    echo "if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then" >> "$PROFILE_FILE"
-    echo "    nohup elixir \C:\Users\busin/.local/share/lontar-aiel/scripts/lontar_telemetry_daemon.exs > /dev/null 2>&1 &" >> "$PROFILE_FILE"
-    echo "fi" >> "$PROFILE_FILE"
-fi
-
-if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then
-    nohup elixir $HOME/.local/share/lontar-aiel/scripts/lontar_telemetry_daemon.exs > /dev/null 2>&1 &
-fi

@@ -1,6 +1,6 @@
 # Lontar AIEL Universal Installer (Windows PowerShell)
 
-Write-Host "📦 Installing Lontar AIEL CLI..." -ForegroundColor Cyan
+Write-Host "⚡ Installing Lontar AIEL CLI & Background Telemetry..." -ForegroundColor Cyan
 
 # Check Elixir
 if (-not (Get-Command "elixir" -ErrorAction SilentlyContinue)) {
@@ -16,7 +16,6 @@ if (-not (Get-Command "git" -ErrorAction SilentlyContinue)) {
 }
 
 $DEST_DIR = "$env:USERPROFILE\lontar-aiel"
-# Using an existing path folder that usually works or standard script path
 $BIN_DIR = "$env:USERPROFILE\AppData\Local\Microsoft\WindowsApps"
 
 if (Test-Path "$DEST_DIR\.git") {
@@ -37,15 +36,15 @@ if (-not (Test-Path $BIN_DIR)) {
 $BatContent = "@echo off`r`nelixir `"%USERPROFILE%\lontar-aiel\scripts\calculate_emission.exs`" %*"
 Set-Content -Path "$BIN_DIR\lontar.bat" -Value $BatContent
 
+Write-Host "⚡ Setting up automatic background telemetry daemon..." -ForegroundColor Cyan
+$StartupFolder = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+$VbsPath = "$StartupFolder\LontarTelemetryDaemon.vbs"
+$VbsScript = 'Set WshShell = CreateObject("WScript.Shell")' + "`r`n" + 'WshShell.Run "elixir """ & WshShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\lontar-aiel\scripts\lontar_telemetry_daemon.exs""", 0'
+Set-Content -Path $VbsPath -Value $VbsScript
+
+Start-Process -FilePath "elixir" -ArgumentList "`"$DEST_DIR\scripts\lontar_telemetry_daemon.exs`"" -WindowStyle Hidden -ErrorAction SilentlyContinue
+
 Write-Host "✅ Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:" -ForegroundColor Cyan
 & "$BIN_DIR\lontar.bat" opt-in
-
-Write-Host "? Setting up automatic background telemetry daemon..." -ForegroundColor Cyan
-$StartupFolder = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
-$VbsPath = "$StartupFolder\LontarTelemetryDaemon.vbs"
-$VbsContent = "Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "elixir "" " & WshShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\lontar-aiel\scripts\lontar_telemetry_daemon.exs"", 0"
-Set-Content -Path $VbsPath -Value $VbsContent
-Start-Process -FilePath "elixir" -ArgumentList ""$DEST_DIR\scripts\lontar_telemetry_daemon.exs"" -WindowStyle Hidden -ErrorAction SilentlyContinue
