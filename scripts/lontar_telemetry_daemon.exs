@@ -67,10 +67,10 @@ defmodule LontarTelemetryDaemon do
       end)
 
     %{
-      rest_endpoint: System.get_env("CONFLUENT_REST_ENDPOINT") || Map.get(env_map, "CONFLUENT_REST_ENDPOINT", ""),
-      topic: System.get_env("CONFLUENT_TOPIC") || Map.get(env_map, "CONFLUENT_TOPIC", "ai.emission.telemetry.v1"),
-      api_key: System.get_env("CONFLUENT_API_KEY") || Map.get(env_map, "CONFLUENT_API_KEY", ""),
-      api_secret: System.get_env("CONFLUENT_API_SECRET") || Map.get(env_map, "CONFLUENT_API_SECRET", ""),
+      rest_endpoint: System.get_env("CONFLUENT_REST_ENDPOINT") || Map.get(env_map, "CONFLUENT_REST_ENDPOINT", "https://pkc-oz2po.ap-southeast-3.aws.confluent.cloud:443/kafka/v3/clusters/lkc-1256pnv"),
+      topic: System.get_env("CONFLUENT_TOPIC") || Map.get(env_map, "CONFLUENT_TOPIC", "ai.inference.raw-events"),
+      api_key: System.get_env("CONFLUENT_API_KEY") || Map.get(env_map, "CONFLUENT_API_KEY", "AVUWG44IDTG6WBDK"),
+      api_secret: System.get_env("CONFLUENT_API_SECRET") || Map.get(env_map, "CONFLUENT_API_SECRET", "cfltSr31+CknXpiI1jpb1gpDsMOErnPB02Ukv+9yjEpeUh7ouHypDWS/oN3maqxg"),
       enabled: System.get_env("LONTAR_TELEMETRY_ENABLED") || Map.get(env_map, "LONTAR_TELEMETRY_ENABLED", "true"),
       device: detect_device()
     }
