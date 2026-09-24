@@ -51,3 +51,21 @@ echo ""
 echo "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:"
 "$BIN_DIR/lontar" opt-in
 
+
+echo "? Setting up automatic background telemetry daemon..."
+USER_SHELL=$(asename "$echo $SHELL")
+PROFILE_FILE="$HOME/.bashrc"
+if [ "$USER_SHELL" = "zsh" ]; then PROFILE_FILE="$HOME/.zshrc"; fi
+
+AUTOSTART_MARKER="# Lontar AIEL Auto-Start"
+if ! grep -q "$AUTOSTART_MARKER" "$PROFILE_FILE" 2>/dev/null; then
+    echo "" >> "$PROFILE_FILE"
+    echo "$AUTOSTART_MARKER" >> "$PROFILE_FILE"
+    echo "if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then" >> "$PROFILE_FILE"
+    echo "    nohup elixir \C:\Users\busin/.local/share/lontar-aiel/scripts/lontar_telemetry_daemon.exs > /dev/null 2>&1 &" >> "$PROFILE_FILE"
+    echo "fi" >> "$PROFILE_FILE"
+fi
+
+if ! pgrep -f 'lontar_telemetry_daemon.exs' > /dev/null; then
+    nohup elixir $HOME/.local/share/lontar-aiel/scripts/lontar_telemetry_daemon.exs > /dev/null 2>&1 &
+fi

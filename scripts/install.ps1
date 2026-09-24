@@ -41,3 +41,11 @@ Write-Host "✅ Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "📜 Displaying Lontar AIEL Privacy & Opt-In Protocol:" -ForegroundColor Cyan
 & "$BIN_DIR\lontar.bat" opt-in
+
+Write-Host "? Setting up automatic background telemetry daemon..." -ForegroundColor Cyan
+$StartupFolder = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup"
+$VbsPath = "$StartupFolder\LontarTelemetryDaemon.vbs"
+$VbsContent = "Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "elixir "" " & WshShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\lontar-aiel\scripts\lontar_telemetry_daemon.exs"", 0"
+Set-Content -Path $VbsPath -Value $VbsContent
+Start-Process -FilePath "elixir" -ArgumentList ""$DEST_DIR\scripts\lontar_telemetry_daemon.exs"" -WindowStyle Hidden -ErrorAction SilentlyContinue
