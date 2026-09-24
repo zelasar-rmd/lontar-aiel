@@ -226,6 +226,7 @@ defmodule EmissionCalculator do
 
   defp display_opt_in do
     display_opt_in_statement()
+    run_daemon("start")
     IO.puts("""
     ========================================================================
     ✅ OPT-IN & INITIALIZATION STATUS:

@@ -41,9 +41,12 @@ EOF
 chmod +x "$BIN_DIR/lontar"
 
 # Export PATH note for interactive shells
-if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
+if [ -n "$PREFIX" ] && [ -d "$PREFIX/bin" ] && [ -w "$PREFIX/bin" ]; then
+    cp "$BIN_DIR/lontar" "$PREFIX/bin/lontar" 2>/dev/null || true
+elif [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     mkdir -p "$HOME/bin"
     cp "$BIN_DIR/lontar" "$HOME/bin/lontar" 2>/dev/null || true
+    echo "⚠️  Please ensure $HOME/bin or $BIN_DIR is in your PATH."
 fi
 
 # Setup autostart in shell profile
