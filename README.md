@@ -89,11 +89,8 @@ curl -sSL https://raw.githubusercontent.com/zelasar-rmd/lontar-aiel/main/scripts
 
 ### 📱 Android / Termux
 ```bash
-pkg update && pkg install -y elixir git
-git clone -b main https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
-mkdir -p ~/bin && echo -e '#!/usr/bin/env bash\nelixir "$HOME/lontar-aiel/scripts/calculate_emission.exs" "$@"' > ~/bin/lontar && chmod +x ~/bin/lontar
-export PATH="$HOME/bin:$PATH"
-lontar opt-in
+pkg update && pkg install -y elixir git ncurses-utils
+curl -sSL https://raw.githubusercontent.com/zelasar-rmd/lontar-aiel/main/scripts/install.sh | bash
 ```
 
 ---

@@ -41,15 +41,7 @@ Open Termux and execute:
 
 ```bash
 pkg update && pkg install -y elixir git ncurses-utils
-git clone https://github.com/zelasar-rmd/lontar-aiel.git ~/lontar-aiel
-mkdir -p ~/bin
-cat << 'EOF' > ~/bin/lontar
-#!/usr/bin/env bash
-elixir "${HOME}/lontar-aiel/scripts/calculate_emission.exs" "$@"
-EOF
-chmod +x ~/bin/lontar
-export PATH="$HOME/bin:$PATH"
-lontar opt-in
+curl -sSL https://raw.githubusercontent.com/zelasar-rmd/lontar-aiel/main/scripts/install.sh | bash
 ```
 
 ---
