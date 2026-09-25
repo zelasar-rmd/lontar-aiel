@@ -348,8 +348,15 @@ defmodule EmissionCalculator do
       IO.puts("   To stop: lontar daemon stop")
     else
       File.mkdir_p!(Path.dirname(pid_file))
-      cmd = "nohup elixir \"#{daemon_script}\" >> \"#{log_file}\" 2>&1 & echo $!"
-      {output, 0} = System.cmd("sh", ["-c", cmd])
+      {output, 0} =
+        case :os.type() do
+          {:win32, _} ->
+            cmd = "Start-Process elixir -ArgumentList '#{daemon_script}' -WindowStyle Hidden -RedirectStandardOutput '#{log_file}' -PassThru | Select-Object -ExpandProperty Id"
+            System.cmd("powershell", ["-Command", cmd])
+          _ ->
+            cmd = "nohup elixir \"#{daemon_script}\" >> \"#{log_file}\" 2>&1 & echo $!"
+            System.cmd("sh", ["-c", cmd])
+        end
       pid = String.trim(output)
       File.write!(pid_file, pid)
 
@@ -370,29 +377,43 @@ defmodule EmissionCalculator do
     end
   end
 
-  defp stop_daemon(pid_file) do
+      defp stop_daemon(pid_file) do
     if File.exists?(pid_file) do
       pid = File.read!(pid_file) |> String.trim()
-      case System.cmd("kill", [pid], stderr_to_stdout: true) do
-        {_, 0} ->
+      {output, exit_code} =
+        case :os.type() do
+          {:win32, _} -> System.cmd("taskkill", ["/F", "/PID", pid], stderr_to_stdout: true)
+          _ -> System.cmd("kill", [pid], stderr_to_stdout: true)
+        end
+      case exit_code do
+        0 ->
           File.rm(pid_file)
-          IO.puts("🛑 Lontar telemetry daemon (PID: #{pid}) successfully stopped.")
-        {err, _} ->
+          IO.puts("?? Lontar telemetry daemon (PID: #{pid}) successfully stopped.")
+        _ ->
           File.rm(pid_file)
-          IO.puts("ℹ️ Daemon was not actively running. Cleaned stale PID file. (#{String.trim(err)})")
+          IO.puts("?? Daemon was not actively running. Cleaned stale PID file. (#{String.trim(output)})")
       end
     else
-      IO.puts("ℹ️ No active Lontar telemetry daemon PID file found.")
+      IO.puts("?? No active Lontar telemetry daemon PID file found.")
     end
   end
 
-  defp status_daemon(pid_file, log_file) do
+    defp status_daemon(pid_file, log_file) do
     if check_pid_alive(pid_file) do
       pid = File.read!(pid_file) |> String.trim()
-      IO.puts("✅ Lontar telemetry daemon is RUNNING in background (PID: #{pid}).")
+      IO.puts("?? Lontar telemetry daemon is RUNNING in background (PID: #{pid}).")
       IO.puts("   Log location: #{log_file}")
+      if File.exists?(log_file) do
+        IO.puts("   --- Recent Activity ---")
+        log_file
+        |> File.read!()
+        |> String.split("\n")
+        |> Enum.take(-8)
+        |> Enum.reject(&(&1 == ""))
+        |> Enum.each(&IO.puts("   #{&1}"))
+      end
     else
-      IO.puts("🛑 Lontar telemetry daemon is NOT running.")
+      IO.puts("?? Lontar telemetry daemon is NOT running.")
     end
   end
 
@@ -400,9 +421,17 @@ defmodule EmissionCalculator do
     if File.exists?(pid_file) do
       pid = File.read!(pid_file) |> String.trim()
       if pid != "" do
-        case System.cmd("kill", ["-0", pid], stderr_to_stdout: true) do
-          {_, 0} -> true
-          _ -> false
+        case :os.type() do
+          {:win32, _} ->
+            case System.cmd("tasklist", ["/FI", "PID eq #{pid}", "/NH"]) do
+              {out, 0} -> String.contains?(out, pid)
+              _ -> false
+            end
+          _ ->
+            case System.cmd("kill", ["-0", pid], stderr_to_stdout: true) do
+              {_, 0} -> true
+              _ -> false
+            end
         end
       else
         false
