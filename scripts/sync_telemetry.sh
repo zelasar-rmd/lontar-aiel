@@ -101,6 +101,7 @@ if [ "$AUDIT_COUNT" -gt 0 ]; then
   cd "$TEMP_SYNC_DIR"
   git add -f logs/
   git commit -m "telemetry: daily automated audit $(date +'%Y-%m-%d') [${AUDIT_COUNT} session(s)]" --quiet
+  git pull origin telemetry --rebase --quiet || true
   git push origin telemetry --quiet
   log "✨ Successfully pushed $AUDIT_COUNT telemetry receipt(s) to zelasar-rmd/lontar-aiel (branch: telemetry)!"
 else
