@@ -503,12 +503,18 @@ defmodule EmissionCalculator do
 
   defp find_transcript_path(path) when is_binary(path) and path != "", do: path
 
-  defp find_transcript_path(_) do
-    base_dir = Path.expand("~/.gemini/antigravity-cli/brain")
-
-    case Path.wildcard("#{base_dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true) do
+    defp find_transcript_path(_) do
+    user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
+    base_dirs = [
+      Path.join(user_home, ".gemini/antigravity-cli/brain"),
+      Path.join(user_home, ".commandcode/brain")
+    ]
+    files = Enum.flat_map(base_dirs, fn dir -> 
+      Path.wildcard("#{dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true)
+    end)
+    case files do
       [] ->
-        IO.puts(:stderr, "No active transcripts found in #{base_dir}")
+        IO.puts(:stderr, "No active transcripts found in configured brain directories")
         System.halt(1)
       files ->
         Enum.max_by(files, fn f ->

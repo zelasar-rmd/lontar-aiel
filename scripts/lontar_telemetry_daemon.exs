@@ -103,10 +103,12 @@ defmodule LontarTelemetryDaemon do
     :crypto.hash(:sha256, "#{hostname}_lontar_salt_2026") |> Base.encode16(case: :lower)
   end
 
-  def find_latest_transcript do
+    def find_latest_transcript do
+    user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
     base_dirs = [
-      Path.expand("~/.gemini/antigravity-cli/brain"),
-      Path.expand("~/.gemini/antigravity/brain")
+      Path.join(user_home, ".gemini/antigravity-cli/brain"),
+      Path.join(user_home, ".gemini/antigravity/brain"),
+      Path.join(user_home, ".commandcode/brain")
     ]
 
     files = Enum.flat_map(base_dirs, fn dir ->
