@@ -1,0 +1,71 @@
+#!/data/data/com.termux/files/usr/bin/env bash
+# Lontar AIEL Ingest Gateway — local daemon control (start|stop|status|restart)
+set -euo pipefail
+
+GATEWAY_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+ENV_FILE="${LONTAR_GATEWAY_ENV:-$HOME/.gemini/lontar_gateway.env}"
+PID_FILE="$HOME/.gemini/lontar_gateway.pid"
+LOG_FILE="$HOME/.gemini/lontar_gateway.log"
+
+# Termux: Mix hard-link locking is unsupported on some Android filesystems
+export MIX_OS_CONCURRENCY_LOCK="${MIX_OS_CONCURRENCY_LOCK:-0}"
+
+mkdir -p "$(dirname "$PID_FILE")"
+
+is_running() {
+  [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null
+}
+
+start() {
+  if is_running; then
+    echo "Lontar gateway already running (pid $(cat "$PID_FILE"))."
+    return 0
+  fi
+
+  if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    set +a
+  else
+    echo "WARN: $ENV_FILE not found — gateway will start unconfigured (ingest returns 503)."
+  fi
+
+  cd "$GATEWAY_DIR"
+  nohup mix run --no-halt >> "$LOG_FILE" 2>&1 &
+  echo $! > "$PID_FILE"
+  echo "Lontar gateway started (pid $(cat "$PID_FILE"))."
+  echo "  log: $LOG_FILE"
+}
+
+stop() {
+  if is_running; then
+    PID="$(cat "$PID_FILE")"
+    kill "$PID" 2>/dev/null || true
+    # also stop the child BEAM if still alive
+    pkill -P "$PID" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    echo "Lontar gateway stopped (pid $PID)."
+  else
+    rm -f "$PID_FILE"
+    echo "Lontar gateway not running."
+  fi
+}
+
+status() {
+  if is_running; then
+    echo "RUNNING (pid $(cat "$PID_FILE"))"
+    echo "  log: $LOG_FILE"
+    [ -f "$LOG_FILE" ] && tail -n 8 "$LOG_FILE" || true
+  else
+    echo "STOPPED"
+  fi
+}
+
+case "${1:-status}" in
+  start) start ;;
+  stop) stop ;;
+  restart) stop; start ;;
+  status) status ;;
+  *) echo "usage: $0 start|stop|status|restart"; exit 1 ;;
+esac
