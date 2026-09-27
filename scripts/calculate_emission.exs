@@ -503,15 +503,25 @@ defmodule EmissionCalculator do
 
   defp find_transcript_path(path) when is_binary(path) and path != "", do: path
 
-    defp find_transcript_path(_) do
+  defp find_transcript_path(_) do
     user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
-    base_dirs = [
-      Path.join(user_home, ".gemini/antigravity-cli/brain"),
-      Path.join(user_home, ".commandcode/brain")
-    ]
-    files = Enum.flat_map(base_dirs, fn dir -> 
-      Path.wildcard("#{dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true)
-    end)
+
+    antigravity_files =
+      [".gemini/antigravity-cli/brain", ".gemini/antigravity/brain"]
+      |> Enum.flat_map(fn dir ->
+        Path.wildcard(
+          Path.join([user_home, dir, "*", ".system_generated", "logs", "transcript.jsonl"]),
+          match_dot: true
+        )
+      end)
+
+    commandcode_files =
+      Path.join([user_home, ".commandcode", "projects", "*", "*.jsonl"])
+      |> Path.wildcard(match_dot: true)
+      |> Enum.reject(&String.ends_with?(&1, ".checkpoints.jsonl"))
+
+    files = antigravity_files ++ commandcode_files
+
     case files do
       [] ->
         IO.puts(:stderr, "No active transcripts found in configured brain directories")
@@ -541,7 +551,9 @@ defmodule EmissionCalculator do
     last_user_idx =
       lines
       |> Enum.with_index()
-      |> Enum.filter(fn {line, _idx} -> String.contains?(line, "\"type\":\"USER_INPUT\"") end)
+      |> Enum.filter(fn {line, _idx} ->
+        String.contains?(line, "\"type\":\"USER_INPUT\"") or String.contains?(line, "\"role\":\"user\"")
+      end)
       |> List.last()
       |> case do
         {_, idx} -> idx
@@ -575,10 +587,10 @@ defmodule EmissionCalculator do
     acc = %{acc | steps: acc.steps + 1}
 
     cond do
-      String.contains?(line, "\"source\":\"USER_EXPLICIT\"") ->
+      String.contains?(line, "\"source\":\"USER_EXPLICIT\"") or String.contains?(line, "\"role\":\"user\"") ->
         %{acc | user_chars: acc.user_chars + chars}
 
-      String.contains?(line, "\"source\":\"MODEL\"") ->
+      String.contains?(line, "\"source\":\"MODEL\"") or String.contains?(line, "\"role\":\"assistant\"") ->
         is_tool = String.contains?(line, "\"tool_calls\"")
         tool_inc = if is_tool do 1 else 0 end
         %{acc | model_chars: acc.model_chars + chars, tool_calls: acc.tool_calls + tool_inc}
@@ -628,7 +640,12 @@ defmodule EmissionCalculator do
 
   defp print_report(path, mode, turn_stats, turn_tokens, turn_wh, turn_co2, session_stats, session_tokens, session_wh, session_co2, water_ml, tree_mins) do
     if mode == :json do
-      session_id = Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+      session_id =
+        if String.contains?(path, ".commandcode/projects/") do
+          Path.basename(path) |> Path.rootname()
+        else
+          Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+        end
       now = DateTime.utc_now() |> DateTime.to_iso8601()
       energy_str = :erlang.float_to_binary(session_wh, decimals: 3)
       co2_str = :erlang.float_to_binary(session_co2, decimals: 3)

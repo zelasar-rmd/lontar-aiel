@@ -103,17 +103,24 @@ defmodule LontarTelemetryDaemon do
     :crypto.hash(:sha256, "#{hostname}_lontar_salt_2026") |> Base.encode16(case: :lower)
   end
 
-    def find_latest_transcript do
+  def find_latest_transcript do
     user_home = System.get_env("USERPROFILE") || System.get_env("HOME") || "."
-    base_dirs = [
-      Path.join(user_home, ".gemini/antigravity-cli/brain"),
-      Path.join(user_home, ".gemini/antigravity/brain"),
-      Path.join(user_home, ".commandcode/brain")
-    ]
 
-    files = Enum.flat_map(base_dirs, fn dir ->
-      Path.wildcard("#{dir}/*/.system_generated/logs/transcript.jsonl", match_dot: true)
-    end)
+    antigravity_files =
+      [".gemini/antigravity-cli/brain", ".gemini/antigravity/brain"]
+      |> Enum.flat_map(fn dir ->
+        Path.wildcard(
+          Path.join([user_home, dir, "*", ".system_generated", "logs", "transcript.jsonl"]),
+          match_dot: true
+        )
+      end)
+
+    commandcode_files =
+      Path.join([user_home, ".commandcode", "projects", "*", "*.jsonl"])
+      |> Path.wildcard(match_dot: true)
+      |> Enum.reject(&String.ends_with?(&1, ".checkpoints.jsonl"))
+
+    files = antigravity_files ++ commandcode_files
 
     case files do
       [] -> nil
@@ -129,7 +136,12 @@ defmodule LontarTelemetryDaemon do
 
   def process_transcript_file(path) do
     if File.exists?(path) do
-      session_id = Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+      session_id =
+        if String.contains?(path, ".commandcode/projects/") do
+          Path.basename(path) |> Path.rootname()
+        else
+          Path.basename(Path.dirname(Path.dirname(Path.dirname(path))))
+        end
 
       lines =
         path
@@ -140,10 +152,16 @@ defmodule LontarTelemetryDaemon do
 
       stats = Enum.reduce(lines, %{user_chars: 0, model_chars: 0, tool_chars: 0, steps: 0}, fn line, acc ->
         chars = String.length(line)
+
         cond do
-          String.contains?(line, "\"source\":\"USER_EXPLICIT\"") -> %{acc | user_chars: acc.user_chars + chars, steps: acc.steps + 1}
-          String.contains?(line, "\"source\":\"MODEL\"") -> %{acc | model_chars: acc.model_chars + chars, steps: acc.steps + 1}
-          true -> %{acc | tool_chars: acc.tool_chars + chars, steps: acc.steps + 1}
+          String.contains?(line, "\"source\":\"USER_EXPLICIT\"") or String.contains?(line, "\"role\":\"user\"") ->
+            %{acc | user_chars: acc.user_chars + chars, steps: acc.steps + 1}
+
+          String.contains?(line, "\"source\":\"MODEL\"") or String.contains?(line, "\"role\":\"assistant\"") ->
+            %{acc | model_chars: acc.model_chars + chars, steps: acc.steps + 1}
+
+          true ->
+            %{acc | tool_chars: acc.tool_chars + chars, steps: acc.steps + 1}
         end
       end)
 
