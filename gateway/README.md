@@ -56,8 +56,16 @@ Enforced: strict field allow-list, 8 KB size cap, per-IP + per-device rate limit
 | `CONFLUENT_TOPIC` | `ai.inference.raw-events` | target topic |
 | `CONFLUENT_API_KEY` / `CONFLUENT_API_SECRET` | — | Confluent Basic auth (secret) |
 
-## Notes
+## Exposure & persistence
 
-- Binds to `127.0.0.1` by default. To let strangers reach it, expose it with a
-  tunnel or reverse proxy you control (see the hardening plan, T1a-R §Exposure).
-- Persist across reboots with `crond` `@reboot` or `termux-services`.
+- Binds to `127.0.0.1` by default (loopback only).
+- Expose it with `bin/lontar-tunnel` (Cloudflare quick tunnel — no account required):
+  ```bash
+  gateway/bin/lontar-tunnel start   # prints the public https://<...>.trycloudflare.com URL
+  gateway/bin/lontar-tunnel url     # print the current URL
+  gateway/bin/lontar-tunnel stop
+  ```
+  The quick-tunnel URL is **ephemeral** (changes on restart). For a stable hostname,
+  use a named Cloudflare tunnel or your own reverse proxy.
+- Persistence: `bin/lontar-gateway` and `bin/lontar-tunnel` both start idempotently
+  from `~/.bashrc` on login and via crond `@reboot`.
